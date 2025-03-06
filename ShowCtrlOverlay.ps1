@@ -13,23 +13,20 @@ $ScreenHeight = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Height
 
 $form = New-Object System.Windows.Forms.Form
 $form.FormBorderStyle = 'None'
-#$form.BackColor = [System.Drawing.Color]::Transparent
-#$form.TransparencyKey = $form.BackColor
+$form.BackColor = "Silver"#[System.Drawing.Color]::Transparent
+$form.TransparencyKey = $form.BackColor
 $form.Width = $Image.Width / 2
 $form.Height = $Image.Height / 4
 $form.TopMost = $true
+$form.Opacity = 0.5
 $form.StartPosition = 'Manual'
 $form.Location = New-Object System.Drawing.Point($LocationX, $LocationY)
-
-$ghndl = $form.CreateGraphics()
-$ghndl.DrawImage($Image, 0, 0, $form.Width, $form.Height)
+$form.BackgroundImage = $image
+$form.FormBorderStyle = 'None'
+$form.Text = "My Custom Form Title"
 Start-Sleep -Seconds 0.5
 $form.Show()
-
-# Keep the form open until a key is pressed
-Write-Host "Press any key to close the image overlay..."
 Start-Sleep -Seconds 3
-#[void][System.Console]::ReadKey($true)
 
 # Clean up
 $form.Close()
