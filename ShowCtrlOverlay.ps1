@@ -27,6 +27,10 @@ $form.Text = "My Custom Form Title"
 Start-Sleep -Seconds 0.5
 $form.Show()
 Start-Sleep -Seconds 3
+$form.Hide()
+Start-Sleep -Seconds 3
+$form.Show()
+Start-Sleep -Seconds 3
 
 # Clean up
 $form.Close()
