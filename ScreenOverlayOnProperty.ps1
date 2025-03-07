@@ -13,6 +13,7 @@
 '@
 $s_prev = 0
 $Slow_Roll_Trigger_Time = 1
+$Music_Auto_Overlay_Wait = 7
 
 #Target res os 1920 x 1080
 #Nominal 4x3 horizontal res is 1440
@@ -67,15 +68,19 @@ While ($True) {
         $WH = get-process | ? { $_.mainwindowhandle -eq $whndl }
         if($WH.ProcessName -like "powershell_ise"){
             $SelApp = 255}
-        elseif(($WH.ProcessName -like "*sheepshaver*") -or ($WH.ProcessName -like "*86box*")){
+        elseif(($WH.ProcessName -like "*sheepshaver*")`
+         -or ($WH.ProcessName -like "*86box*")){
             $SelApp = 2}
-        elseif(($WH.MainWindowTitle -like "*retroarch*") -or ($WH.MainWindowTitle -like "*citra*")){
+        elseif(($WH.MainWindowTitle -like "*retroarch*")`
+         -or ($WH.MainWindowTitle -like "*citra*")){
             $SelApp = 3}
         elseif(($WH.MainWindowTitle -like "*duckstation*")`
          -or ($WH.MainWindowTitle -like "*pcsx2*")`
          -or ($WH.MainWindowTitle -like "*pcsx2*")){
             $SelApp = 4}
-        elseif(($WH.MainWindowTitle -like "*pandora*") -or ($WH.ProcessName -like "*pandora*")){
+        elseif(($WaitTime -gt $Music_Auto_Overlay_Wait)`
+        -and (($WH.MainWindowTitle -like "*pandora*")`
+         -or ($WH.ProcessName -like "*pandora*"))){
             $SelApp = 10}
         else{
             $SelApp = 0}
