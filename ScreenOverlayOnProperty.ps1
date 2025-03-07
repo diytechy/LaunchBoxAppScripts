@@ -30,11 +30,19 @@ $SlowTime = $LastMovement
 #10 - Music timeout (Pandora / ect)
 #255 - Powershell ISE
 $SelApp      = 0
+#Initialize all form definitions, and how it relates back to the app / mode.
+$OverlayDefs = {@{ t1 = "1"
+t2 = "2"},
+{ t1 = "3"
+t2 = "4"}
+}
 $OverlayMode = 0
+break
 #Idle loop check, only applies when 
 While ($True) {
 	$ksum = 0
 	$exitkeyspressed = 0
+    $exittrig = 0
 	For ($k = 1; $k -le 255; $k++){
 		$null = [User32]::GetAsyncKeyState($k) # Flush keyboard buffers
 		If ([User32]::GetAsyncKeyState($k)) {
@@ -45,7 +53,7 @@ While ($True) {
                 {$exitkeyspressed = $exitkeyspressed+1}
 		}
 	}
-    if($exitkeyspressed -gt 1){break}
+    if($exitkeyspressed -gt 1){$exittrig = 1}
     #Update timers and check if anything has changed on mouse position and keyboard.
     $mp = $position = [System.Windows.Forms.Cursor]::Position
 	$s = $ksum
@@ -94,6 +102,12 @@ While ($True) {
     {
         #Write-Host $WaitTime
     }
+    #If not exiiting,
+    if(-not $exittrig)
+    {}
+    #Cleanup if the exit trigger is set.
+    else{}
+
     #If the active window is music related and the time has expired, open ProjectM
         #Else make sure the overlay is closed.
 
