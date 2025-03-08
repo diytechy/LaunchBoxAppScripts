@@ -1,4 +1,6 @@
-﻿Add-Type -TypeDefinition @'
+﻿Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Drawing
+Add-Type -TypeDefinition @'
 	using System;
 	using System.Runtime.InteropServices;
     using System.Text;
@@ -31,13 +33,52 @@ $SlowTime = $LastMovement
 #255 - Powershell ISE
 $SelApp      = 0
 #Initialize all form definitions, and how it relates back to the app / mode.
-$OverlayDefs = {@{ t1 = "1"
-t2 = "2"},
-{ t1 = "3"
-t2 = "4"}
+$ScreenWidth = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Width
+$ScreenHeight = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Height
+$RuntimeDef =
+@(
+[pscustomobject]@{AppIdx=10;Cmd="..\ProjectM\ProjectM.exe"},
+[pscustomobject]@{AppIdx=20;Cmd="..\WinAmp\WinAmp.exe"}
+)
+$OverlayDef =
+@(
+[pscustomobject]@{AppIdx=1;pos="c";ImgFile="WinOverlay.png"},
+[pscustomobject]@{AppIdx=2;pos="l";ImgFile="RunnableL.png"},
+[pscustomobject]@{AppIdx=2;pos="r";ImgFile="RunnableR.png"},
+[pscustomobject]@{AppIdx=3;pos="l";ImgFile="SingleLL.png"},
+[pscustomobject]@{AppIdx=3;pos="r";ImgFile="SingleLR.png"},
+[pscustomobject]@{AppIdx=4;pos="l";ImgFile="DoubleLL.png"},
+[pscustomobject]@{AppIdx=4;pos="r";ImgFile="DoubleLR.png"}
+)
+$OverlayDef | Add-Member -MemberType NoteProperty -Name form -Value (New-Object System.Windows.Forms.Form)
+foreach ($Def in $OverlayDef){
+    #Get image
+    $fullPath = Join-Path -Path $PSScriptRoot -ChildPath $Def.ImgFile
+    $tmpimage = [System.Drawing.Image]::FromFile($fullPath)
+    #Determine position
+    $YLoc = ($ScreenHeight - $tmpimage.Height)/2
+    if($YLoc -lt 0){$YLoc = 0}
+    switch($Def.pos){
+        "l"{$XLoc = 0;}
+        "r"{$XLoc = $ScreenWidth - $tmpimage.Width;}
+        default{$XLoc = ($ScreenWidth - $tmpimage.Width)/2}
+    }
+    if($XLoc -lt 0){$XLoc = 0}
+    $Def.form.BackgroundImage = $tmpimage
+    $Def.form.FormBorderStyle = 'None'
+    $Def.form.BackColor = "Silver"#[System.Drawing.Color]::Transparent
+    $Def.form.TransparencyKey = $Def.form.BackColor
+    $Def.form.Width = $tmpimage.Width
+    $Def.form.Height = $tmpimage.Height
+    $Def.form.TopMost = $true
+    $Def.form.Opacity = 0.5
+    $Def.form.StartPosition = 'Manual'
+    $Def.form.Location = New-Object System.Drawing.Point($XLoc, $YLoc)
+    $Def.form.FormBorderStyle = 'None'
+    $Def.form.Text = $Def.ImgFile
 }
+$tmpimage.Dispose()
 $OverlayMode = 0
-break
 #Idle loop check, only applies when 
 While ($True) {
 	$ksum = 0
@@ -106,7 +147,13 @@ While ($True) {
     if(-not $exittrig)
     {}
     #Cleanup if the exit trigger is set.
-    else{}
+    else{
+        foreach ($Def in $OverlayDef){
+            $Def.form.Close()
+            $Def.form.Close()
+        }
+        break
+    }
 
     #If the active window is music related and the time has expired, open ProjectM
         #Else make sure the overlay is closed.
