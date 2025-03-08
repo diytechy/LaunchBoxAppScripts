@@ -31,6 +31,48 @@ function Is-KeyboardActiveOrExitCodeSet {
     else{return 0}
 }
 
+$VideoPlayerNames="Youtube","Crunchyroll","Netrlix","Disney"
+function Is-WindowVideoPlayer {
+
+    param (
+        [string]$WindowString
+        )
+    $NameMatchesVidList = 0
+    foreach ($strchk in $VideoPlayerNames){
+        if($WindowString -match $strchk){
+            $NameMatchesVidList = 1
+            break
+        }
+    }
+    if($NameMatchesVidList){return $true}
+    else{return $false}
+}
+
+function UpdateOverlays {
+
+    param (
+        $AppInd,
+        $OverlayDef
+        )
+        #$OverlayDef[1].form.show()
+    $ShowUpdated = 0
+    if(1){
+        Write-Host "App indexes input:"
+        Write-Host $AppInd.Count
+        Write-Host "Overlay Def Count:"
+        Write-Host $OverlayDef.Count
+        foreach ($Def in $OverlayDef){
+            if($Def.AppIdx -eq $AppInd){
+                $Def.form.Show()
+                $ShowUpdated = $ShowUpdated+1
+            }
+            else{
+                $Def.form.Hide()
+            }
+        }
+    }
+    return($ShowUpdated)
+}
 
 
 $s_prev = 0
@@ -49,7 +91,9 @@ $SlowTime = $LastMovement
 #2 - Runnable overlay (Sheepshaver / 86box)
 #3 - Single Load / Save slot
 #4 - Dual Load / Save slot
-#10 - Music timeout (Pandora / ect)
+#10 - Music with timeout (Pandora / ect) to show ProjectM
+#20 - Time to show custom screensaver
+#100 - Video player or another app where screensaver should be ignored.
 #255 - Powershell ISE
 $SelApp      = 0
 #Initialize all form definitions, and how it relates back to the app / mode.
@@ -70,34 +114,36 @@ $OverlayDef =
 [pscustomobject]@{AppIdx=4;pos="l";ImgFile="OverlayGraphics\DoubleLL.png"},
 [pscustomobject]@{AppIdx=4;pos="r";ImgFile="OverlayGraphics\DoubleLR.png"}
 )
-$OverlayDef | Add-Member -MemberType NoteProperty -Name form -Value (New-Object System.Windows.Forms.Form)
+$OverlayDef | Add-Member -MemberType NoteProperty -Name form -Value ([System.Windows.Forms.Form])
+$OverlayDef | Add-Member -MemberType NoteProperty -Name image -Value ([System.Drawing.Image])
+#Close the initialized object
 foreach ($Def in $OverlayDef){
+    $Def.form = New-Object System.Windows.Forms.Form
     #Get image
     $fullPath = Join-Path -Path $PSScriptRoot -ChildPath $Def.ImgFile
-    $tmpimage = [System.Drawing.Image]::FromFile($fullPath)
+    $Def.image = [System.Drawing.Image]::FromFile($fullPath)
     #Determine position
-    $YLoc = ($ScreenHeight - $tmpimage.Height)/2
+    $YLoc = ($ScreenHeight - $Def.image.Height)/2
     if($YLoc -lt 0){$YLoc = 0}
     switch($Def.pos){
         "l"{$XLoc = 0;}
-        "r"{$XLoc = $ScreenWidth - $tmpimage.Width;}
-        default{$XLoc = ($ScreenWidth - $tmpimage.Width)/2}
+        "r"{$XLoc = $ScreenWidth - $Def.image.Width;}
+        default{$XLoc = ($ScreenWidth - $Def.image.Width)/2}
     }
     if($XLoc -lt 0){$XLoc = 0}
-    $Def.form.BackgroundImage = $tmpimage
+    $Def.form.BackgroundImage = $Def.image
     $Def.form.FormBorderStyle = 'None'
     $Def.form.BackColor = "Silver"#[System.Drawing.Color]::Transparent
     $Def.form.TransparencyKey = $Def.form.BackColor
-    $Def.form.Width = $tmpimage.Width
-    $Def.form.Height = $tmpimage.Height
+    $Def.form.Width = $Def.image.Width
+    $Def.form.Height = $Def.image.Height
     $Def.form.TopMost = $true
     $Def.form.Opacity = 0.5
     $Def.form.StartPosition = 'Manual'
     $Def.form.Location = New-Object System.Drawing.Point($XLoc, $YLoc)
     $Def.form.FormBorderStyle = 'None'
-    $Def.form.Text = $Def.ImgFile
+    $Def.form.Text = Split-Path $Def.ImgFile -Leaf
 }
-$tmpimage.Dispose()
 $OverlayMode = 0
 #Idle loop check, only applies when 
 While ($True) {
@@ -113,12 +159,11 @@ While ($True) {
     $WaitTime = $CurrTime-$LastMovement
     $SlowRoll = $CurrTime-$SlowTime
 	If (($s_prev -ne $s) -or ($mp_prev -ne $mp)) {
-		#Write-Host $ksum
 		$s_prev = $s
         $mp_prev = $mp
         $LastMovement = $StopWatch.Elapsed.TotalSeconds
 	}
-    #Do stuff when idle for "x" period.
+    #Do stuff when check timer passes.
     if ($SlowRoll -gt $Slow_Roll_Trigger_Time)
     {
         $PrevSelApp = $SelApp
@@ -126,7 +171,9 @@ While ($True) {
         #Get active window (Maybe don't need to do this so often?
         $whndl = [User32]::GetForegroundWindow()
         $WH = get-process | ? { $_.mainwindowhandle -eq $whndl }
-        if($WH.ProcessName -like "powershell_ise"){
+        if(Is-WindowVideoPlayer($WH.MainWindowTitle)){
+            $SelApp = 100}
+        elseif($WH.ProcessName -like "powershell_ise"){
             $SelApp = 255}
         elseif(($WH.ProcessName -like "*sheepshaver*")`
          -or ($WH.ProcessName -like "*86box*")){
@@ -142,12 +189,15 @@ While ($True) {
         -and (($WH.MainWindowTitle -like "*pandora*")`
          -or ($WH.ProcessName -like "*pandora*"))){
             $SelApp = 10}
+        elseif($WaitTime -gt $Music_Auto_Overlay_Wait){
+            $SelApp = 200}
         else{
             $SelApp = 0}
         #break;
         if($SelApp -ne $PrevSelApp){
             Write-Host $SelApp
             Write-Host $WaitTime
+            UpdateOverlays $SelApp $OverlayDef
         }
     }
     else
@@ -160,6 +210,7 @@ While ($True) {
     #Cleanup if the exit trigger is set.
     else{
         foreach ($Def in $OverlayDef){
+            $Def.image.Dispose()
             $Def.form.Close()
             $Def.form.Close()
         }
