@@ -138,7 +138,7 @@ foreach ($Def in $OverlayDef){
     $Def.form.Width = $Def.image.Width
     $Def.form.Height = $Def.image.Height
     $Def.form.TopMost = $true
-    $Def.form.Opacity = 0.5
+    $Def.form.Opacity = 0.8
     $Def.form.StartPosition = 'Manual'
     $Def.form.Location = New-Object System.Drawing.Point($XLoc, $YLoc)
     $Def.form.FormBorderStyle = 'None'
