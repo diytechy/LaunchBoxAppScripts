@@ -1,13 +1,7 @@
-﻿$NAudCoreDLL = Join-Path -Path $PSScriptRoot -ChildPath "NAudio\NAudio.Core.dll"
-$NAudDLL = Join-Path -Path $PSScriptRoot -ChildPath "NAudio\NAudio.dll"
-$env:Path += ";$PSScriptRoot\NAudio"
-Add-Type -Path $NAudCoreDLL
-Add-Type -Path $NAudDLL
-Add-Type -AssemblyName System.Windows.Forms
+﻿Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 Add-Type -TypeDefinition @'
 	using System;
-    using System.Diagnostics;
 	using System.Runtime.InteropServices;
     using System.Text;
 	public class User32{
@@ -19,15 +13,6 @@ Add-Type -TypeDefinition @'
         [DllImport("user32.dll", CharSet = CharSet.Auto)] public static extern IntPtr SendMessage(IntPtr hWnd, UInt32 Msg, IntPtr wParam, string lParam);
 	}
 '@
-[NAudio.Wave.WaveOut]::DeviceCount
-break;
-function Is-AudioPlaying {
-    $deviceEnumerator = New-Object NAudio.CoreAudioApi.MMDeviceEnumerator
-    $defaultAudioEndpoint = $deviceEnumerator.GetDefaultAudioEndpoint("Render", "DataFlow", "All")
-    $audioMeterInformation = $defaultAudioEndpoint.AudioMeterInformation
-    $peakValue = $audioMeterInformation.GetPeakValue()
-    return $peakValue -gt 0
-}
 
 function Is-KeyboardActiveOrExitCodeSet {
 	$ksum = 0
