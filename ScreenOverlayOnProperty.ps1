@@ -2,6 +2,7 @@
 Add-Type -AssemblyName System.Drawing
 Add-Type -TypeDefinition @'
 	using System;
+    using System.Diagnostics;
 	using System.Runtime.InteropServices;
     using System.Text;
 	public class User32{
@@ -10,9 +11,37 @@ Add-Type -TypeDefinition @'
         [DllImport("user32.dll", SetLastError=true, CharSet=CharSet.Auto)] public static extern IntPtr GetForegroundWindow();
         [DllImport("user32.dll", SetLastError=true, CharSet=CharSet.Auto)] public static extern Int32 GetWindowThreadProcessId(IntPtr hWnd,out Int32 lpdwProcessId);
         [DllImport("user32.dll", SetLastError=true, CharSet=CharSet.Auto)] public static extern Int32 GetWindowTextLength(IntPtr hWnd);
-    [DllImport("user32.dll", CharSet = CharSet.Auto)] public static extern IntPtr SendMessage(IntPtr hWnd, UInt32 Msg, IntPtr wParam, string lParam);
+        [DllImport("user32.dll", CharSet = CharSet.Auto)] public static extern IntPtr SendMessage(IntPtr hWnd, UInt32 Msg, IntPtr wParam, string lParam);
 	}
 '@
+
+function Is-AudioPlaying {
+    $deviceEnumerator = New-Object NAudio.CoreAudioApi.MMDeviceEnumerator
+    $defaultAudioEndpoint = $deviceEnumerator.GetDefaultAudioEndpoint("Render", "DataFlow", "All")
+    $audioMeterInformation = $defaultAudioEndpoint.AudioMeterInformation
+    $peakValue = $audioMeterInformation.GetPeakValue()
+    return $peakValue -gt 0
+}
+
+function Is-KeyboardActiveOrExitCodeSet {
+	$ksum = 0
+	For ($k = 1; $k -le 255; $k++){
+		$null = [User32]::GetAsyncKeyState($k) # Flush keyboard buffers
+		If ([User32]::GetAsyncKeyState($k)) {
+			$ksum = $ksum + $k
+            if($k -eq 27) #Esc val 
+                {$exitkeyspressed = $exitkeyspressed+1}
+            if($k -eq 115) #F4 val 
+                {$exitkeyspressed = $exitkeyspressed+1}
+		}
+	}
+    if($exitkeyspressed -gt 1){return 2}
+    elseif($ksum){return 1}
+    else{return 0}
+}
+
+
+
 $s_prev = 0
 $Slow_Roll_Trigger_Time = 1
 $Music_Auto_Overlay_Wait = 7
@@ -81,23 +110,14 @@ $tmpimage.Dispose()
 $OverlayMode = 0
 #Idle loop check, only applies when 
 While ($True) {
-	$ksum = 0
+    $keychk = Is-KeyboardActiveOrExitCodeSet
 	$exitkeyspressed = 0
     $exittrig = 0
-	For ($k = 1; $k -le 255; $k++){
-		$null = [User32]::GetAsyncKeyState($k) # Flush keyboard buffers
-		If ([User32]::GetAsyncKeyState($k)) {
-			$ksum = $ksum + $k
-            if($k -eq 27) #Esc val 
-                {$exitkeyspressed = $exitkeyspressed+1}
-            if($k -eq 115) #F4 val 
-                {$exitkeyspressed = $exitkeyspressed+1}
-		}
-	}
-    if($exitkeyspressed -gt 1){$exittrig = 1}
+    #**************************
+    if($keychk -gt 1){$exittrig = 1}
     #Update timers and check if anything has changed on mouse position and keyboard.
     $mp = $position = [System.Windows.Forms.Cursor]::Position
-	$s = $ksum
+	$s = $keychk
     $CurrTime = $StopWatch.Elapsed.TotalSeconds
     $WaitTime = $CurrTime-$LastMovement
     $SlowRoll = $CurrTime-$SlowTime
