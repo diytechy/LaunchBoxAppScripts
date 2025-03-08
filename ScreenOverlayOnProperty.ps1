@@ -1,4 +1,9 @@
-﻿Add-Type -AssemblyName System.Windows.Forms
+﻿$NAudCoreDLL = Join-Path -Path $PSScriptRoot -ChildPath "NAudio\NAudio.Core.dll"
+$NAudDLL = Join-Path -Path $PSScriptRoot -ChildPath "NAudio\NAudio.dll"
+$env:Path += ";$PSScriptRoot\NAudio"
+Add-Type -Path $NAudCoreDLL
+Add-Type -Path $NAudDLL
+Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 Add-Type -TypeDefinition @'
 	using System;
@@ -14,7 +19,8 @@ Add-Type -TypeDefinition @'
         [DllImport("user32.dll", CharSet = CharSet.Auto)] public static extern IntPtr SendMessage(IntPtr hWnd, UInt32 Msg, IntPtr wParam, string lParam);
 	}
 '@
-
+[NAudio.Wave.WaveOut]::DeviceCount
+break;
 function Is-AudioPlaying {
     $deviceEnumerator = New-Object NAudio.CoreAudioApi.MMDeviceEnumerator
     $defaultAudioEndpoint = $deviceEnumerator.GetDefaultAudioEndpoint("Render", "DataFlow", "All")
@@ -71,13 +77,13 @@ $RuntimeDef =
 )
 $OverlayDef =
 @(
-[pscustomobject]@{AppIdx=1;pos="c";ImgFile="WinOverlay.png"},
-[pscustomobject]@{AppIdx=2;pos="l";ImgFile="RunnableL.png"},
-[pscustomobject]@{AppIdx=2;pos="r";ImgFile="RunnableR.png"},
-[pscustomobject]@{AppIdx=3;pos="l";ImgFile="SingleLL.png"},
-[pscustomobject]@{AppIdx=3;pos="r";ImgFile="SingleLR.png"},
-[pscustomobject]@{AppIdx=4;pos="l";ImgFile="DoubleLL.png"},
-[pscustomobject]@{AppIdx=4;pos="r";ImgFile="DoubleLR.png"}
+[pscustomobject]@{AppIdx=1;pos="c";ImgFile="OverlayGraphics\WinOverlay.png"},
+[pscustomobject]@{AppIdx=2;pos="l";ImgFile="OverlayGraphics\RunnableL.png"},
+[pscustomobject]@{AppIdx=2;pos="r";ImgFile="OverlayGraphics\RunnableR.png"},
+[pscustomobject]@{AppIdx=3;pos="l";ImgFile="OverlayGraphics\SingleLL.png"},
+[pscustomobject]@{AppIdx=3;pos="r";ImgFile="OverlayGraphics\SingleLR.png"},
+[pscustomobject]@{AppIdx=4;pos="l";ImgFile="OverlayGraphics\DoubleLL.png"},
+[pscustomobject]@{AppIdx=4;pos="r";ImgFile="OverlayGraphics\DoubleLR.png"}
 )
 $OverlayDef | Add-Member -MemberType NoteProperty -Name form -Value (New-Object System.Windows.Forms.Form)
 foreach ($Def in $OverlayDef){
