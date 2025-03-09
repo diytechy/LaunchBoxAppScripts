@@ -17,6 +17,8 @@ Add-Type -TypeDefinition @'
 
 function Is-KeyboardActiveOrExitCodeSet {
 	$ksum = 0
+    $overlaykeyspressed = 0 
+    $exitkeyspressed = 0 
 	For ($k = 1; $k -le 255; $k++){
 		$null = [User32]::GetAsyncKeyState($k) # Flush keyboard buffers
 		If ([User32]::GetAsyncKeyState($k)) {
@@ -25,9 +27,16 @@ function Is-KeyboardActiveOrExitCodeSet {
                 {$exitkeyspressed = $exitkeyspressed+1}
             if($k -eq 115) #F4 val 
                 {$exitkeyspressed = $exitkeyspressed+1}
+            if($k -eq 77) #M key
+                {$overlaykeyspressed = $overlaykeyspressed+1}
+            if($k -eq 17) #Left ctrl key
+                {$overlaykeyspressed = $overlaykeyspressed+1}
+            if($k -eq 18)#Left alt key
+                {$overlaykeyspressed = $overlaykeyspressed+1}
 		}
 	}
-    if($exitkeyspressed -gt 1){return 2}
+    if($exitkeyspressed -gt 1){return 3}
+    if($overlaykeyspressed -gt 2){return 2}
     elseif($ksum){return 1}
     else{return 0}
 }
@@ -59,10 +68,6 @@ function UpdateOverlays {
         #$OverlayDef[1].form.show()
     $ShowUpdated = 0
     if(1){
-        Write-Host "App indexes input:"
-        Write-Host $AppInd.Count
-        Write-Host "Overlay Def Count:"
-        Write-Host $OverlayDef.Count
         foreach ($Def in $OverlayDef){
             if($Def.AppIdx -eq $AppInd){
                 $Def.form.Show()
@@ -77,10 +82,84 @@ function UpdateOverlays {
     return($ShowUpdated)
 }
 
+function UpdateAutoExes {
+
+    param (
+        $AppInd,
+        $AutoExeDef,
+        $PrevAppInd
+        )
+        #$OverlayDef[1].form.show()
+    $ShowUpdated = 0;
+    foreach ($Def in $AutoExeDef){
+        #First check to see if the process is already running.
+        $fullPath = Join-Path -Path $PSScriptRoot -ChildPath $Def.Cmd
+        $expprocname = [System.IO.Path]::GetFileNameWithoutExtension($fullPath)
+        $RunningProc = get-process | ? { $_.ProcessName -eq $expprocname }
+        #If there is more than one running process, we don't know what to do with it, so don't do anything with it.
+        if($RunningProc.Count -gt 1){continue}
+        
+         
+        if($Def.AppIdx -eq $AppInd){
+            #If the process is already running, just bring it to the front
+            if($RunningProc){
+                [User32]::SetForegroundWindow($RunningProc)
+                $ShowUpdated = $ShowUpdated+1
+            }
+            #Else the process isn't running, we need to start it if possible.
+            else{
+                $RunCmd = 0
+                #If there is optional definition content, figure out how to apply it.
+                if($Def.Opt.length){
+                    switch($AppInd){
+                        #Custom screensaver, get the optional path, select a random video, and play it full screen on repeat.
+                        20{
+                            if(Test-Path $Def.Opt -PathType Container){
+                                $AllMP4s = @(Get-ChildItem -Path $($Def.Opt) -Filter "*.mp4" -Recurse)
+                                if($AllMP4s.Count){
+                                    $ShufMP4s = ($AllMP4s | Get-Random -Shuffle)
+                                    foreach($file in $ShufMP4s){
+
+                                    }
+                                    $AllFiles = "`"" + (($ShufMP4s | ForEach-Object {$_.FullName}) -join "`" `"") + "`""
+                                    $ApndCmd = " -L -f " + $AllFiles
+                                    $RunCmd  = 1;
+                                }
+                            }
+                        }
+                        default{
+                            $ApndCmd = ""
+                            $RunCmd  = 1;
+                        }
+                    }
+
+                }
+
+                if($RunCmd -and (Test-Path $fullPath -PathType Leaf)){
+                    $FullExp = `"$fullPath`"$ApndCmd
+                    Invoke-Expression $FullExp
+                    $ShowUpdated = $ShowUpdated+1
+                }
+            }
+        }
+        #If the app index was previously running, and now we've switched, close it if applicable.
+        if($Def.AppIdx -eq $PrevAppInd){
+            #If it is running, shut it down when it shouldn't be running.
+            #If the process is already running, just bring it to the front
+            if($RunningProc){
+                Stop-Process -Id $RunningProc -Force
+            }
+        }
+    }
+    return($ShowUpdated)
+}
+
 
 $s_prev = 0
 $Slow_Roll_Trigger_Time = 1
 $Music_Auto_Overlay_Wait = 7
+$Video_Screensaver_Wait = 20
+$WindowsMenuOverlayTimeout = 3
 
 #Target res os 1920 x 1080
 #Nominal 4x3 horizontal res is 1440
@@ -104,8 +183,8 @@ $ScreenWidth = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Width
 $ScreenHeight = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Height
 $RuntimeDef =
 @(
-[pscustomobject]@{AppIdx=10;Cmd="..\ProjectM\ProjectM.exe"},
-[pscustomobject]@{AppIdx=20;Cmd="..\WinAmp\WinAmp.exe"}
+[pscustomobject]@{AppIdx=10;Cmd="..\ProjectM\ProjectM.exe";Opt=""},
+[pscustomobject]@{AppIdx=20;Cmd="..\vlc\vlc.exe";Opt=""}
 )
 $OverlayDef =
 @(
@@ -154,7 +233,16 @@ While ($True) {
 	$exitkeyspressed = 0
     $exittrig = 0
     #**************************
-    if($keychk -gt 1){$exittrig = 1}
+    if($keychk -eq 3){$exittrig = 1}
+    
+    if($keychk -eq 2)
+    {
+        $TripWinOverlay = 1
+        if (($SelApp -eq 0) -or ($SelApp -eq 1)){
+            $WindowsMenuOverlayTimer = 0
+        }
+    }
+    else {$TripWinOverlay = 0}
     #Update timers and check if anything has changed on mouse position and keyboard.
     $mp = $position = [System.Windows.Forms.Cursor]::Position
 	$s = $keychk
@@ -192,15 +280,20 @@ While ($True) {
         -and (($WH.MainWindowTitle -like "*pandora*")`
          -or ($WH.ProcessName -like "*pandora*"))){
             $SelApp = 10}
-        elseif($WaitTime -gt $Music_Auto_Overlay_Wait){
+        elseif($WaitTime -gt $Video_Screensaver_Wait){
             $SelApp = 200}
+        elseif ($WindowsMenuOverlayTimer -lt $WindowsMenuOverlayTimeout){
+            $SelApp = 1
+            }
         else{
             $SelApp = 0}
         #break;
         if($SelApp -ne $PrevSelApp){
-            Write-Host $SelApp
-            Write-Host $WaitTime
-            UpdateOverlays $SelApp $OverlayDef $whndl
+            #Write-Host $SelApp
+            #Write-Host $WaitTime
+            $OverlayFdbk = UpdateOverlays $SelApp $OverlayDef $whndl
+            $AudoExeFdbk = UpdateAutoExes $SelApp $RuntimeDef $PrevSelApp
+
         }
     }
     else
@@ -219,9 +312,6 @@ While ($True) {
         }
         break
     }
-
-    #If the active window is music related and the time has expired, open ProjectM
-        #Else make sure the overlay is closed.
-
+    $WindowsMenuOverlayTimer = $WindowsMenuOverlayTimer+0.03
 	Start-Sleep -Milliseconds 30
 }
