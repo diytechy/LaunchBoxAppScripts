@@ -41,21 +41,44 @@ function Is-KeyboardActiveOrExitCodeSet {
     else{return 0}
 }
 
-$VideoPlayerNames="Youtube","Crunchyroll","Netrlix","Disney"
-function Is-WindowVideoPlayer {
+function Is-WindowActive {
 
     param (
-        [string]$WindowString
+        [string]$WindowString,
+        $WindowMatch,
+        $debug = 0
         )
-    $NameMatchesVidList = 0
-    foreach ($strchk in $VideoPlayerNames){
+    if($debug){
+    Write-Host "WindowString:"
+    write-Host $WindowString
+    Write-Host "WindowMatch:"
+    Write-Host $WindowMatch
+    Write-Host "Options to check:"
+    Write-Host $WindowMatch.Count
+    }
+    $NameMatches = 0
+    foreach ($strchk in $WindowMatch){
         if($WindowString -match $strchk){
-            $NameMatchesVidList = 1
+            $NameMatches = 1
             break
         }
     }
-    if($NameMatchesVidList){return $true}
+    if($NameMatches){return $true}
     else{return $false}
+    break
+}
+
+$VideoPlayerNames="Youtube","Crunchyroll","Netflix","Disney"
+function Is-WindowVideoPlayer {
+    param ([string]$WindowString)
+    return(Is-WindowActive $WindowString @($VideoPlayerNames))
+}
+
+$MusicPlayerNames="Pandora","Spotify","Amazon Music","Radio"
+function Is-WindowMusicPlayer {
+    param ([string]$WindowString)
+    #$TstVal = Is-WindowActive $WindowString @($MusicPlayerNames) 1; Write-Host $TstVal
+    return(Is-WindowActive $WindowString @($MusicPlayerNames))
 }
 
 function UpdateOverlays {
@@ -156,7 +179,7 @@ function UpdateAutoExes {
 
 
 $s_prev = 0
-$Slow_Roll_Trigger_Time = 1
+$Slow_Roll_Trigger_Time = 0.5
 $Music_Auto_Overlay_Wait = 7
 $Video_Screensaver_Wait = 20
 $WindowsMenuOverlayTimeout = 3
@@ -277,8 +300,7 @@ While ($True) {
          -or ($WH.MainWindowTitle -like "*pcsx2*")){
             $SelApp = 4}
         elseif(($WaitTime -gt $Music_Auto_Overlay_Wait)`
-        -and (($WH.MainWindowTitle -like "*pandora*")`
-         -or ($WH.ProcessName -like "*pandora*"))){
+        -and (Is-WindowMusicPlayer($WH.MainWindowTitle))){
             $SelApp = 10}
         elseif($WaitTime -gt $Video_Screensaver_Wait){
             $SelApp = 200}
@@ -289,7 +311,7 @@ While ($True) {
             $SelApp = 0}
         #break;
         if($SelApp -ne $PrevSelApp){
-            #Write-Host $SelApp
+            Write-Host $SelApp
             #Write-Host $WaitTime
             $OverlayFdbk = UpdateOverlays $SelApp $OverlayDef $whndl
             $AudoExeFdbk = UpdateAutoExes $SelApp $RuntimeDef $PrevSelApp
