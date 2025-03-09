@@ -8,6 +8,7 @@ Add-Type -TypeDefinition @'
 	    [DllImport("user32.dll")] public static extern short GetAsyncKeyState(int virtualKeyCode);
         [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)] public static extern int GetWindowText(IntPtr hwnd,StringBuilder lpString, int cch);
         [DllImport("user32.dll", SetLastError=true, CharSet=CharSet.Auto)] public static extern IntPtr GetForegroundWindow();
+        [DllImport("user32.dll")] [return: MarshalAs(UnmanagedType.Bool)]  public static extern bool SetForegroundWindow(IntPtr hWnd);
         [DllImport("user32.dll", SetLastError=true, CharSet=CharSet.Auto)] public static extern Int32 GetWindowThreadProcessId(IntPtr hWnd,out Int32 lpdwProcessId);
         [DllImport("user32.dll", SetLastError=true, CharSet=CharSet.Auto)] public static extern Int32 GetWindowTextLength(IntPtr hWnd);
         [DllImport("user32.dll", CharSet = CharSet.Auto)] public static extern IntPtr SendMessage(IntPtr hWnd, UInt32 Msg, IntPtr wParam, string lParam);
@@ -52,7 +53,8 @@ function UpdateOverlays {
 
     param (
         $AppInd,
-        $OverlayDef
+        $OverlayDef,
+        $ActiveWinPID
         )
         #$OverlayDef[1].form.show()
     $ShowUpdated = 0
@@ -65,6 +67,7 @@ function UpdateOverlays {
             if($Def.AppIdx -eq $AppInd){
                 $Def.form.Show()
                 $ShowUpdated = $ShowUpdated+1
+                [User32]::SetForegroundWindow($ActiveWinPID)
             }
             else{
                 $Def.form.Hide()
@@ -197,7 +200,7 @@ While ($True) {
         if($SelApp -ne $PrevSelApp){
             Write-Host $SelApp
             Write-Host $WaitTime
-            UpdateOverlays $SelApp $OverlayDef
+            UpdateOverlays $SelApp $OverlayDef $whndl
         }
     }
     else
