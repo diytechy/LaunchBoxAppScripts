@@ -1,12 +1,14 @@
 @echo off
-::setlocal enabledelayedexpansion
 setlocal
-set loc = %~dp0
-set relpath = ..\LaunchBox\LaunchBox.exe
-echo Root path:
-echo %loc
-echo Rel path: %relpath%
 
-set final= %loc% and %relpath%
-echo Final value: %final%
+:: Define a relative path
+set relativePath=..\LaunchBox\LaunchBox.exe
+
+:: Combine script's path with the relative path
+set fullPath=%~dp0%relativePath%
+
+echo Full Path: %fullPath%
+call %fullPath%
+
+endlocal
 pause
