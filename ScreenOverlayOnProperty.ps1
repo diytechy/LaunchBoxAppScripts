@@ -12,6 +12,7 @@ Add-Type -TypeDefinition @'
         [DllImport("user32.dll", SetLastError=true, CharSet=CharSet.Auto)] public static extern Int32 GetWindowThreadProcessId(IntPtr hWnd,out Int32 lpdwProcessId);
         [DllImport("user32.dll", SetLastError=true, CharSet=CharSet.Auto)] public static extern Int32 GetWindowTextLength(IntPtr hWnd);
         [DllImport("user32.dll", CharSet = CharSet.Auto)] public static extern IntPtr SendMessage(IntPtr hWnd, UInt32 Msg, IntPtr wParam, string lParam);
+        [DllImport("user32.dll")] public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
 	}
 '@
 
@@ -105,6 +106,27 @@ function UpdateOverlays {
     return($ShowUpdated)
 }
 
+function Show-Process {
+    param(
+        [string]$ProcessName
+    )
+    $signature = @"
+        [DllImport("user32.dll")]
+        public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
+        [DllImport("user32.dll")]
+        public static extern int SetForegroundWindow(IntPtr hwnd);
+"@
+    $windowAPI = Add-Type -MemberDefinition $signature -Name "WindowAPI" -Namespace Win32 -PassThru
+    $process = Get-Process -Name $ProcessName -ErrorAction SilentlyContinue
+    if ($process) {
+        $handle = $process.MainWindowHandle
+        $windowAPI::ShowWindowAsync($handle, 4)
+        $windowAPI::SetForegroundWindow($handle)
+    } else {
+        Write-Warning "Process '$ProcessName' not found."
+    }
+}
+
 function UpdateAutoExes {
 
     param (
@@ -115,6 +137,7 @@ function UpdateAutoExes {
         )
         #$OverlayDef[1].form.show()
     $ShowUpdated = 0;
+    $SelAutoExe = 0;
     Write-Host Number of autodefs:
     Write-Host $AutoExeDef.Count
     foreach ($Def in $AutoExeDef){
@@ -129,10 +152,11 @@ function UpdateAutoExes {
         
          
         if($Def.AppIdx -eq $AppInd){
+            $SelAutoExe = $AppInd
             #If the process is already running, just bring it to the front
             Write-Host App found for process
             if($RunningProc){
-                [User32]::SetForegroundWindow($RunningProc)
+                [User32]::SetForegroundWindow($RunningProc.MainWindowHandle)
                 $ShowUpdated = $ShowUpdated+1
             }
             #Else the process isn't running, we need to start it if possible.
@@ -164,6 +188,8 @@ function UpdateAutoExes {
                 if($RunCmd -and (Test-Path $fullPath -PathType Leaf)){
                     $FullExp = "`""+$fullPath+"`""
                     $parentDir = Split-Path -Path $fullPath -Parent
+                    $procName = Split-Path -Path $fullPath -Leaf
+                    #$procName = [System.IO.Path]::GetFileNameWithoutExtension("$parentDir")
                     #$ResPath = Resolve-Path -LiteralPath $FullExp
                     Write-Host $fullPath
                     Write-Host $parentDir
@@ -175,7 +201,20 @@ function UpdateAutoExes {
                     else{
                         Start-Process -FilePath $fullPath -WorkingDirectory $parentDir
                     }
-                    Write-Host $FullExp
+	                Start-Sleep -Milliseconds 1000
+                    $RunningProc = get-process | ? { $_.ProcessName -eq $expprocname }
+                    if ($RunningProc) {
+                        $handle = $RunningProc.MainWindowHandle
+                        #[user32]::ShowWindowAsync($handle, 5)
+                        [user32]::SetForegroundWindow($handle)
+                        Write-Host FORCING FORWARD
+                    }
+                    else
+                    {
+                        Write-Host **********************PROCESS NOT FOUND**************************
+                        Write-Host $expprocname
+                    }
+                    #Write-Host $FullExp
                     #Write-Host $ResPath
                     #Invoke-Expression $FullExp
                     $ShowUpdated = $ShowUpdated+1
@@ -191,7 +230,7 @@ function UpdateAutoExes {
             }
         }
     }
-    return($ShowUpdated)
+    return($SelAutoExe)
 }
 
 
@@ -299,6 +338,7 @@ While ($True) {
     if ($SlowRoll -gt $Slow_Roll_Trigger_Time)
     {
         $PrevSelApp = $SelApp
+        $PrevAutoExe = $CurrAutoExe
         $SlowTime = $CurrTime
         $proclist = get-process
         #Get active window (Maybe don't need to do this so often?
@@ -319,7 +359,8 @@ While ($True) {
          -or ($WH.MainWindowTitle -like "*pcsx2*")){
             $SelApp = 4}
         elseif(($WaitTime -gt $Music_Auto_Overlay_Wait)`
-        -and (Is-WindowMusicPlayer($WH.MainWindowTitle))){
+        -and ((Is-WindowMusicPlayer($WH.MainWindowTitle))`
+        -or ($PrevAutoExe -eq 10))){
             $SelApp = 10}
         elseif($WaitTime -gt $Video_Screensaver_Wait){
             $SelApp = 200}
@@ -333,7 +374,7 @@ While ($True) {
             Write-Host $SelApp
             #Write-Host $WaitTime
             $OverlayFdbk = UpdateOverlays $SelApp $OverlayDef $whndl
-            $AudoExeFdbk = UpdateAutoExes $SelApp $RuntimeDef $PrevSelApp $proclist
+            $CurrAutoExe = UpdateAutoExes $SelApp $RuntimeDef $PrevSelApp $proclist
 
         }
     }
