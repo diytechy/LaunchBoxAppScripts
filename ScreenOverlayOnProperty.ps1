@@ -110,21 +110,27 @@ function UpdateAutoExes {
     param (
         $AppInd,
         $AutoExeDef,
-        $PrevAppInd
+        $PrevAppInd,
+        $proclist
         )
         #$OverlayDef[1].form.show()
     $ShowUpdated = 0;
+    Write-Host Number of autodefs:
+    Write-Host $AutoExeDef.Count
     foreach ($Def in $AutoExeDef){
         #First check to see if the process is already running.
         $fullPath = Join-Path -Path $PSScriptRoot -ChildPath $Def.Cmd
         $expprocname = [System.IO.Path]::GetFileNameWithoutExtension($fullPath)
-        $RunningProc = get-process | ? { $_.ProcessName -eq $expprocname }
+        $RunningProc = $proclist | ? { $_.ProcessName -eq $expprocname }
         #If there is more than one running process, we don't know what to do with it, so don't do anything with it.
+        Write-Host Number of matching processes:
+        Write-Host $RunningProc.Count
         if($RunningProc.Count -gt 1){continue}
         
          
         if($Def.AppIdx -eq $AppInd){
             #If the process is already running, just bring it to the front
+            Write-Host App found for process
             if($RunningProc){
                 [User32]::SetForegroundWindow($RunningProc)
                 $ShowUpdated = $ShowUpdated+1
@@ -133,44 +139,55 @@ function UpdateAutoExes {
             else{
                 $RunCmd = 0
                 #If there is optional definition content, figure out how to apply it.
-                if($Def.Opt.length){
-                    switch($AppInd){
-                        #Custom screensaver, get the optional path, select a random video, and play it full screen on repeat.
-                        20{
-                            if(Test-Path $Def.Opt -PathType Container){
-                                $AllMP4s = @(Get-ChildItem -Path $($Def.Opt) -Filter "*.mp4" -Recurse)
-                                if($AllMP4s.Count){
-                                    $ShufMP4s = ($AllMP4s | Get-Random -Shuffle)
-                                    foreach($file in $ShufMP4s){
+                switch($AppInd){
+                    #Custom screensaver, get the optional path, select a random video, and play it full screen on repeat.
+                    20{
+                        if(($Def.Opt.length) -and (Test-Path $Def.Opt -PathType Container)){
+                            $AllMP4s = @(Get-ChildItem -Path $($Def.Opt) -Filter "*.mp4" -Recurse)
+                            if($AllMP4s.Count){
+                                $ShufMP4s = ($AllMP4s | Get-Random -Shuffle)
+                                foreach($file in $ShufMP4s){
 
-                                    }
-                                    $AllFiles = "`"" + (($ShufMP4s | ForEach-Object {$_.FullName}) -join "`" `"") + "`""
-                                    $ApndCmd = " -L -f " + $AllFiles
-                                    $RunCmd  = 1;
                                 }
+                                $AllFiles = "`"" + (($ShufMP4s | ForEach-Object {$_.FullName}) -join "`" `"") + "`""
+                                $ApndCmd = " -L -f " + $AllFiles
+                                $RunCmd  = 1;
                             }
                         }
-                        default{
-                            $ApndCmd = ""
-                            $RunCmd  = 1;
-                        }
                     }
-
+                    default{
+                        $ApndCmd = ""
+                        $RunCmd  = 1;
+                    }
                 }
 
                 if($RunCmd -and (Test-Path $fullPath -PathType Leaf)){
-                    $FullExp = `"$fullPath`"$ApndCmd
-                    Invoke-Expression $FullExp
+                    $FullExp = "`""+$fullPath+"`""
+                    $parentDir = Split-Path -Path $fullPath -Parent
+                    #$ResPath = Resolve-Path -LiteralPath $FullExp
+                    Write-Host $fullPath
+                    Write-Host $parentDir
+                    Write-Host $ApndCmd
+                    if($ApndCmd.Length)
+                    {
+                        Start-Process -FilePath $fullPath -WorkingDirectory $parentDir -ArgumentList $ApndCmd
+                    }
+                    else{
+                        Start-Process -FilePath $fullPath -WorkingDirectory $parentDir
+                    }
+                    Write-Host $FullExp
+                    #Write-Host $ResPath
+                    #Invoke-Expression $FullExp
                     $ShowUpdated = $ShowUpdated+1
                 }
             }
         }
         #If the app index was previously running, and now we've switched, close it if applicable.
-        if($Def.AppIdx -eq $PrevAppInd){
+        elseif($Def.AppIdx -eq $PrevAppInd){
             #If it is running, shut it down when it shouldn't be running.
             #If the process is already running, just bring it to the front
             if($RunningProc){
-                Stop-Process -Id $RunningProc -Force
+                Stop-Process -Id $RunningProc.ID -Force
             }
         }
     }
@@ -206,7 +223,7 @@ $ScreenWidth = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Width
 $ScreenHeight = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Height
 $RuntimeDef =
 @(
-[pscustomobject]@{AppIdx=10;Cmd="..\ProjectM\ProjectM.exe";Opt=""},
+[pscustomobject]@{AppIdx=10;Cmd="..\ProjectM\projectMSDL.exe";Opt=""},
 [pscustomobject]@{AppIdx=20;Cmd="..\vlc\vlc.exe";Opt=""}
 )
 $OverlayDef =
@@ -250,6 +267,7 @@ foreach ($Def in $OverlayDef){
     $Def.form.Text = Split-Path $Def.ImgFile -Leaf
 }
 $OverlayMode = 0
+$WindowsMenuOverlayTimer = $WindowsMenuOverlayTimeout
 #Idle loop check, only applies when 
 While ($True) {
     $keychk = Is-KeyboardActiveOrExitCodeSet
@@ -282,9 +300,10 @@ While ($True) {
     {
         $PrevSelApp = $SelApp
         $SlowTime = $CurrTime
+        $proclist = get-process
         #Get active window (Maybe don't need to do this so often?
         $whndl = [User32]::GetForegroundWindow()
-        $WH = get-process | ? { $_.mainwindowhandle -eq $whndl }
+        $WH = $proclist | ? { $_.mainwindowhandle -eq $whndl }
         if(Is-WindowVideoPlayer($WH.MainWindowTitle)){
             $SelApp = 100}
         elseif($WH.ProcessName -like "powershell_ise"){
@@ -314,7 +333,7 @@ While ($True) {
             Write-Host $SelApp
             #Write-Host $WaitTime
             $OverlayFdbk = UpdateOverlays $SelApp $OverlayDef $whndl
-            $AudoExeFdbk = UpdateAutoExes $SelApp $RuntimeDef $PrevSelApp
+            $AudoExeFdbk = UpdateAutoExes $SelApp $RuntimeDef $PrevSelApp $proclist
 
         }
     }
@@ -332,7 +351,7 @@ While ($True) {
             $Def.form.Close()
             $Def.form.Close()
         }
-        break
+        exit
     }
     $WindowsMenuOverlayTimer = $WindowsMenuOverlayTimer+0.03
 	Start-Sleep -Milliseconds 30
