@@ -13,6 +13,8 @@ Add-Type -TypeDefinition @'
         [DllImport("user32.dll", SetLastError=true, CharSet=CharSet.Auto)] public static extern Int32 GetWindowTextLength(IntPtr hWnd);
         [DllImport("user32.dll", CharSet = CharSet.Auto)] public static extern IntPtr SendMessage(IntPtr hWnd, UInt32 Msg, IntPtr wParam, string lParam);
         [DllImport("user32.dll")] public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
+        [DllImport("user32.dll")] [return: MarshalAs(UnmanagedType.Bool)]  public static extern bool BringWindowToTop(IntPtr hWnd);
+        [DllImport("user32.dll")] public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X,int Y, int cx, int cy, uint uFlags);
 	}
 '@
 
@@ -206,7 +208,8 @@ function UpdateAutoExes {
                     if ($RunningProc) {
                         $handle = $RunningProc.MainWindowHandle
                         #[user32]::ShowWindowAsync($handle, 5)
-                        [user32]::SetForegroundWindow($handle)
+                        #[user32]::SetForegroundWindow($handle)
+                        [user32]::SetWindowPos($handle, -1, 0, 0, 0, 0, 0x53)
                         Write-Host FORCING FORWARD
                     }
                     else
