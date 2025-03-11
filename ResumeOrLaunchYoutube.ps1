@@ -6,6 +6,7 @@ Add-Type -TypeDefinition @'
     using System.Text;
 	public class User32{
         [DllImport("user32.dll")] [return: MarshalAs(UnmanagedType.Bool)]  public static extern bool SetForegroundWindow(IntPtr hWnd);
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)] public static extern int GetWindowText(IntPtr hwnd,StringBuilder lpString, int cch);
 	}
 '@
  

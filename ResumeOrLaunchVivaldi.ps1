@@ -9,6 +9,7 @@ Add-Type -TypeDefinition @'
 	}
 '@
  
+$RelPathDef = "..\Vivaldi\Application\vivaldi.exe --start-fullscreen"
 $IDHndl = @(get-process | ? { $_.MainWindowTitle -match "vivaldi"})
 #If the process is open, switch to it.
 if($IDHndl){
@@ -16,5 +17,6 @@ if($IDHndl){
 }
 #Else, open it.
 else{
-    Start-Process -FilePath "vivaldi"
+    $fullPath = Join-Path -Path $PSScriptRoot -ChildPath $RelPathDef
+    Invoke-Expression $fullPath
 }
