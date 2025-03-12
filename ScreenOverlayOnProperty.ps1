@@ -80,7 +80,7 @@ function Is-WindowVideoPlayer {
 $MusicPlayerNames="Pandora","Spotify","Amazon Music","Radio"
 function Is-WindowMusicPlayer {
     param ([string]$WindowString)
-    #$TstVal = Is-WindowActive $WindowString @($MusicPlayerNames) 1; Write-Host $TstVal
+    #Write-Host Is Music Active: ;$TstVal = Is-WindowActive $WindowString @($MusicPlayerNames); Write-Host $TstVal
     return(Is-WindowActive $WindowString @($MusicPlayerNames))
 }
 
@@ -138,7 +138,7 @@ function UpdateAutoExes {
             #If the process is already running, just bring it to the front
             #Write-Host App found for process
             if($RunningProc){
-                [User32]::SetForegroundWindow($RunningProc.MainWindowHandle)
+                #[User32]::SetForegroundWindow($RunningProc.MainWindowHandle)
                 $ShowUpdated = $ShowUpdated+1
             }
             #Else the process isn't running, we need to start it if possible.
@@ -241,6 +241,7 @@ $SlowTime = $LastMovement
 #100 - Video player or another app where screensaver should be ignored.
 #255 - Powershell ISE
 $SelApp      = 0
+$CurrAutoExe = 0
 #Initialize all form definitions, and how it relates back to the app / mode.
 $ScreenWidth = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Width
 $ScreenHeight = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Height
@@ -343,6 +344,7 @@ While ($True) {
          -or ($WH.MainWindowTitle -like "*pcsx2*")){
             $SelApp = 4}
         elseif(($WaitTime -gt $Music_Auto_Overlay_Wait)`
+        -and ($PrevSelApp -ne 20)`
         -and ((Is-WindowMusicPlayer($WH.MainWindowTitle))`
         -or ($PrevAutoExe -eq 10))){
             $SelApp = 10}
