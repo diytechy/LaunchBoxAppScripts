@@ -108,26 +108,6 @@ function UpdateOverlays {
     return($ShowUpdated)
 }
 
-function Show-Process {
-    param(
-        [string]$ProcessName
-    )
-    $signature = @"
-        [DllImport("user32.dll")]
-        public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
-        [DllImport("user32.dll")]
-        public static extern int SetForegroundWindow(IntPtr hwnd);
-"@
-    $windowAPI = Add-Type -MemberDefinition $signature -Name "WindowAPI" -Namespace Win32 -PassThru
-    $process = Get-Process -Name $ProcessName -ErrorAction SilentlyContinue
-    if ($process) {
-        $handle = $process.MainWindowHandle
-        $windowAPI::ShowWindowAsync($handle, 4)
-        $windowAPI::SetForegroundWindow($handle)
-    } else {
-        Write-Warning "Process '$ProcessName' not found."
-    }
-}
 
 function UpdateAutoExes {
 
@@ -140,23 +120,23 @@ function UpdateAutoExes {
         #$OverlayDef[1].form.show()
     $ShowUpdated = 0;
     $SelAutoExe = 0;
-    Write-Host Number of autodefs:
-    Write-Host $AutoExeDef.Count
+    #Write-Host Number of autodefs:
+    #Write-Host $AutoExeDef.Count
     foreach ($Def in $AutoExeDef){
         #First check to see if the process is already running.
         $fullPath = Join-Path -Path $PSScriptRoot -ChildPath $Def.Cmd
         $expprocname = [System.IO.Path]::GetFileNameWithoutExtension($fullPath)
         $RunningProc = $proclist | ? { $_.ProcessName -eq $expprocname }
         #If there is more than one running process, we don't know what to do with it, so don't do anything with it.
-        Write-Host Number of matching processes:
-        Write-Host $RunningProc.Count
+        #Write-Host Number of matching processes:
+        #Write-Host $RunningProc.Count
         if($RunningProc.Count -gt 1){continue}
         
          
         if($Def.AppIdx -eq $AppInd){
             $SelAutoExe = $AppInd
             #If the process is already running, just bring it to the front
-            Write-Host App found for process
+            #Write-Host App found for process
             if($RunningProc){
                 [User32]::SetForegroundWindow($RunningProc.MainWindowHandle)
                 $ShowUpdated = $ShowUpdated+1
@@ -171,7 +151,7 @@ function UpdateAutoExes {
                         if(($Def.Opt.length) -and (Test-Path $Def.Opt -PathType Container)){
                             $AllMP4s = @(Get-ChildItem -Path $($Def.Opt) -Filter "*.mp4" -Recurse)
                             if($AllMP4s.Count){
-                                $ShufMP4s = ($AllMP4s | Get-Random -Shuffle)
+                                $ShufMP4s = ($AllMP4s | Sort-Object { Get-Random })
                                 foreach($file in $ShufMP4s){
 
                                 }
@@ -179,6 +159,7 @@ function UpdateAutoExes {
                                 $ApndCmd = " -L -f " + $AllFiles
                                 $RunCmd  = 1;
                             }
+                            #write-host $ApndCmd 
                         }
                     }
                     default{
@@ -193,9 +174,9 @@ function UpdateAutoExes {
                     $procName = Split-Path -Path $fullPath -Leaf
                     #$procName = [System.IO.Path]::GetFileNameWithoutExtension("$parentDir")
                     #$ResPath = Resolve-Path -LiteralPath $FullExp
-                    Write-Host $fullPath
-                    Write-Host $parentDir
-                    Write-Host $ApndCmd
+                    #Write-Host $fullPath
+                    #Write-Host $parentDir
+                    #Write-Host $ApndCmd
                     if($ApndCmd.Length)
                     {
                         Start-Process -FilePath $fullPath -WorkingDirectory $parentDir -ArgumentList $ApndCmd
@@ -203,14 +184,14 @@ function UpdateAutoExes {
                     else{
                         Start-Process -FilePath $fullPath -WorkingDirectory $parentDir
                     }
-	                Start-Sleep -Milliseconds 1000
+	                Start-Sleep -Milliseconds 2000
                     $RunningProc = get-process | ? { $_.ProcessName -eq $expprocname }
                     if ($RunningProc) {
                         $handle = $RunningProc.MainWindowHandle
                         #[user32]::ShowWindowAsync($handle, 5)
                         #[user32]::SetForegroundWindow($handle)
                         [user32]::SetWindowPos($handle, -1, 0, 0, 0, 0, 0x53)
-                        Write-Host FORCING FORWARD
+                        #Write-Host FORCING FORWARD
                     }
                     else
                     {
@@ -266,7 +247,7 @@ $ScreenHeight = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Height
 $RuntimeDef =
 @(
 [pscustomobject]@{AppIdx=10;Cmd="..\ProjectM\projectMSDL.exe";Opt=""},
-[pscustomobject]@{AppIdx=20;Cmd="..\vlc\vlc.exe";Opt=""}
+[pscustomobject]@{AppIdx=20;Cmd="..\vlc\vlc.exe";Opt="D:\MediaScreenSaver"}
 )
 $OverlayDef =
 @(
@@ -366,7 +347,7 @@ While ($True) {
         -or ($PrevAutoExe -eq 10))){
             $SelApp = 10}
         elseif($WaitTime -gt $Video_Screensaver_Wait){
-            $SelApp = 200}
+            $SelApp = 20}
         elseif ($WindowsMenuOverlayTimer -lt $WindowsMenuOverlayTimeout){
             $SelApp = 1
             }
