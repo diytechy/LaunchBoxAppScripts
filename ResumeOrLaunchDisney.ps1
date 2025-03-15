@@ -15,15 +15,12 @@ Add-Type -TypeDefinition @'
 	}
 '@
  
-$IDHndl = @(get-process | ? { $_.MainWindowTitle -eq "LaunchBox Big Box"})
+$IDHndl = @(get-process | ? { $_.MainWindowTitle -eq "Disney+"})
 #If the process is open, switch to it.
 if($IDHndl){
     [User32]::SetForegroundWindow($IDHndl[0].mainwindowhandle)
 }
 #Else, open it.
 else{
-$IDHndl = @(get-process | ? { $_.MainWindowTitle -eq "LaunchBox"})
-    if($IDHndl){
-        [User32]::SetForegroundWindow($IDHndl[0].mainwindowhandle)
-    }
+    Start-Process -FilePath "$PSScriptRoot\Disney+ - Shortcut.lnk"
 }

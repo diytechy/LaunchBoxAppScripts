@@ -15,12 +15,12 @@ Add-Type -TypeDefinition @'
 	}
 '@
  
-$IDHndl = @(get-process | ? { $_.MainWindowTitle -eq "Pandora"})
+$IDHndl = @(get-process | ? { $_.MainWindowTitle -eq "Amazon Music"})
 #If the process is open, switch to it.
 if($IDHndl){
     [User32]::SetForegroundWindow($IDHndl[0].mainwindowhandle)
 }
 #Else, open it.
 else{
-    Start-Process -FilePath "$PSScriptRoot\Pandora - Shortcut.lnk"
+    Start-Process -FilePath "$PSScriptRoot\Amazon Music - Shortcut.lnk"
 }

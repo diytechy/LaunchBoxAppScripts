@@ -71,6 +71,12 @@ function Is-WindowActive {
     break
 }
 
+$HoldWindowNames="DosBox","LaunchBox","Arch","Disney"
+function Is-WindowVideoPlayer {
+    param ([string]$WindowString)
+    return(Is-WindowActive $WindowString @($HoldWindowNames))
+}
+
 $VideoPlayerNames="Youtube","Crunchyroll","Netflix","Disney"
 function Is-WindowVideoPlayer {
     param ([string]$WindowString)
@@ -220,6 +226,7 @@ function UpdateAutoExes {
 
 $s_prev = 0
 $Slow_Roll_Trigger_Time = 0.5
+$lborbb_exit_trigger_script_end_time = 5
 $Music_Auto_Overlay_Wait = 7
 $Video_Screensaver_Wait = 20
 $WindowsMenuOverlayTimeout = 3
@@ -291,6 +298,7 @@ foreach ($Def in $OverlayDef){
     $Def.form.Text = Split-Path $Def.ImgFile -Leaf
 }
 $OverlayMode = 0
+$lborbbseenrunning = $false
 $WindowsMenuOverlayTimer = $WindowsMenuOverlayTimeout
 #Idle loop check, only applies when 
 While ($True) {
@@ -320,48 +328,62 @@ While ($True) {
         $LastMovement = $StopWatch.Elapsed.TotalSeconds
 	}
     #Do stuff when check timer passes.
-    if ($SlowRoll -gt $Slow_Roll_Trigger_Time)
+    if (($SlowRoll -gt $Slow_Roll_Trigger_Time) -and -not $exittrig)
     {
         $PrevSelApp = $SelApp
         $PrevAutoExe = $CurrAutoExe
         $SlowTime = $CurrTime
         $proclist = get-process
-        #Get active window (Maybe don't need to do this so often?
-        $whndl = [User32]::GetForegroundWindow()
-        $WH = $proclist | ? { $_.mainwindowhandle -eq $whndl }
-        if(Is-WindowVideoPlayer($WH.MainWindowTitle)){
-            $SelApp = 100}
-        elseif($WH.ProcessName -like "powershell_ise"){
-            $SelApp = 255}
-        elseif(($WH.ProcessName -like "*sheepshaver*")`
-         -or ($WH.ProcessName -like "*86box*")){
-            $SelApp = 2}
-        elseif(($WH.MainWindowTitle -like "*retroarch*")`
-         -or ($WH.MainWindowTitle -like "*citra*")){
-            $SelApp = 3}
-        elseif(($WH.MainWindowTitle -like "*duckstation*")`
-         -or ($WH.MainWindowTitle -like "*pcsx2*")`
-         -or ($WH.MainWindowTitle -like "*pcsx2*")){
-            $SelApp = 4}
-        elseif(($WaitTime -gt $Music_Auto_Overlay_Wait)`
-        -and ($PrevSelApp -ne 20)`
-        -and ((Is-WindowMusicPlayer($WH.MainWindowTitle))`
-        -or ($PrevAutoExe -eq 10))){
-            $SelApp = 10}
-        elseif($WaitTime -gt $Video_Screensaver_Wait){
-            $SelApp = 20}
-        elseif ($WindowsMenuOverlayTimer -lt $WindowsMenuOverlayTimeout){
-            $SelApp = 1
-            }
-        else{
-            $SelApp = 0}
-        #break;
-        if($SelApp -ne $PrevSelApp){
-            Write-Host $SelApp
-            #Write-Host $WaitTime
-            $OverlayFdbk = UpdateOverlays $SelApp $OverlayDef $whndl
-            $CurrAutoExe = UpdateAutoExes $SelApp $RuntimeDef $PrevSelApp $proclist
+        $lbproc = $proclist | ? { $_.ProcessName -eq "LaunchBox" }
+        $bbproc = $proclist | ? { $_.ProcessName -eq "BigBox" }
+        if ($lbproc.count -or $bbproc){
+            $lborbbseenrunning = $true
+            $lborbb_last_seen_run_time=$CurrTime
+        }
+        elseif($lborbbseenrunning)
+        {
+            $lborbb_timeout=$CurrTime-$lborbb_last_seen_run_time
+            if($lborbb_timeout -gt $lborbb_exit_trigger_script_end_time)
+            {$exittrig = $true}
+        }
+        if(-not $exittrig){
+            #Get active window (Maybe don't need to do this so often?
+            $whndl = [User32]::GetForegroundWindow()
+            $WH = $proclist | ? { $_.mainwindowhandle -eq $whndl }
+            if(Is-WindowVideoPlayer($WH.MainWindowTitle)){
+                $SelApp = 100}
+            elseif($WH.ProcessName -like "powershell_ise"){
+                $SelApp = 255}
+            elseif(($WH.ProcessName -like "*sheepshaver*")`
+             -or ($WH.ProcessName -like "*86box*")){
+                $SelApp = 2}
+            elseif(($WH.MainWindowTitle -like "*retroarch*")`
+             -or ($WH.MainWindowTitle -like "*citra*")){
+                $SelApp = 3}
+            elseif(($WH.MainWindowTitle -like "*duckstation*")`
+             -or ($WH.MainWindowTitle -like "*pcsx2*")`
+             -or ($WH.MainWindowTitle -like "*pcsx2*")){
+                $SelApp = 4}
+            elseif(($WaitTime -gt $Music_Auto_Overlay_Wait)`
+            -and ($PrevSelApp -ne 20)`
+            -and ((Is-WindowMusicPlayer($WH.MainWindowTitle))`
+            -or ($PrevAutoExe -eq 10))){
+                $SelApp = 10}
+            elseif($WaitTime -gt $Video_Screensaver_Wait){
+                $SelApp = 20}
+            elseif ($WindowsMenuOverlayTimer -lt $WindowsMenuOverlayTimeout){
+                $SelApp = 1
+                }
+            else{
+                $SelApp = 0}
+            #break;
+            if($SelApp -ne $PrevSelApp){
+                Write-Host $SelApp
+                #Write-Host $WaitTime
+                $OverlayFdbk = UpdateOverlays $SelApp $OverlayDef $whndl
+                $CurrAutoExe = UpdateAutoExes $SelApp $RuntimeDef $PrevSelApp $proclist
 
+            }
         }
     }
     else
