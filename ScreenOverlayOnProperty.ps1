@@ -72,7 +72,7 @@ function Is-WindowActive {
 }
 
 $HoldWindowNames="DosBox","LaunchBox","Arch","Disney"
-function Is-WindowVideoPlayer {
+function Is-WindowHoldActive {
     param ([string]$WindowString)
     return(Is-WindowActive $WindowString @($HoldWindowNames))
 }
@@ -345,6 +345,9 @@ While ($True) {
             $lborbb_timeout=$CurrTime-$lborbb_last_seen_run_time
             if($lborbb_timeout -gt $lborbb_exit_trigger_script_end_time)
             {$exittrig = $true}
+        }
+        if(Is-WindowHoldActive($WH.MainWindowTitle)){
+            $LastMovement = $CurrTime
         }
         if(-not $exittrig){
             #Get active window (Maybe don't need to do this so often?

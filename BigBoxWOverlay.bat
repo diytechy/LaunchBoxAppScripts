@@ -9,6 +9,6 @@ set LBPath=%~dp0%relativePath%
 set OLPath=%~dp0%overlayPS%
 ::echo Full Path: %fullPath%
 call %LBPath%
-powershell.exe -noexit -WindowStyle Minimized -file "%OLPath%"
+powershell.exe -ExecutionPolicy Bypass -WindowStyle Minimized -file "%OLPath%"
 endlocal
 pause

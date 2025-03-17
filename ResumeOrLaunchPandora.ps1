@@ -15,7 +15,7 @@ Add-Type -TypeDefinition @'
 	}
 '@
  
-$IDHndl = @(get-process | ? { $_.MainWindowTitle -eq "Pandora"})
+$IDHndl = @(get-process | ? { $_.MainWindowTitle -match "Pandora"})
 #If the process is open, switch to it.
 if($IDHndl){
     [User32]::SetForegroundWindow($IDHndl[0].mainwindowhandle)
