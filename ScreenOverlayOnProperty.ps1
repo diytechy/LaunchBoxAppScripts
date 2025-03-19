@@ -358,7 +358,8 @@ While ($True) {
             elseif($WH.ProcessName -like "powershell_ise"){
                 $SelApp = 255}
             elseif(($WH.ProcessName -like "*sheepshaver*")`
-             -or ($WH.ProcessName -like "*86box*")){
+             -or ($WH.ProcessName -like "*86box*")`
+             -or ($WH.ProcessName -like "*DOSBox*")){
                 $SelApp = 2}
             elseif(($WH.MainWindowTitle -like "*retroarch*")`
              -or ($WH.MainWindowTitle -like "*citra*")){
