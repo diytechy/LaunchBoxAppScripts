@@ -1,13 +1,9 @@
-Map remaining windows layout (Mouse to RS, scroll to LS vertical, seek to LS horizontal, volume to L1 / L2, clicking to R1/ R2)
-
-
-
-Add termination script for dosbox
+Map files for DOSBox since title is not reliable... =(
 
 Add mapping if needed for other windows games.
 
-Add startup macro for Sheep Shaver
+Add multi game startup macro for Sheep Shaver
 
-DONE:
-Add the "console" image graphics for playlist.
-Add the "faneart" background image graphics for playlist.
+Filter mouse position change over time?  (To reduce jitter resetting timer)
+
+Make sure Vivaldi maps to locally installed version (How?)
