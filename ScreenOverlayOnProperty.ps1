@@ -296,6 +296,7 @@ foreach ($Def in $OverlayDef){
     $Def.form.Location = New-Object System.Drawing.Point($XLoc, $YLoc)
     $Def.form.FormBorderStyle = 'None'
     $Def.form.Text = Split-Path $Def.ImgFile -Leaf
+    $Def.form.AutoSizeMode = 'None'
 }
 $OverlayMode = 0
 $lborbbseenrunning = $false
