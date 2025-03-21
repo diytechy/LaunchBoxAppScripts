@@ -15,7 +15,51 @@ Add-Type -TypeDefinition @'
         [DllImport("user32.dll")] public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
         [DllImport("user32.dll")] [return: MarshalAs(UnmanagedType.Bool)]  public static extern bool BringWindowToTop(IntPtr hWnd);
         [DllImport("user32.dll")] public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X,int Y, int cx, int cy, uint uFlags);
-	}
+}
+'@
+
+Add-Type @'
+using System;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+
+namespace PInvoke.Win32 {
+
+    public static class UserInput {
+
+        [DllImport("user32.dll", SetLastError=false)]
+        private static extern bool GetLastInputInfo(ref LASTINPUTINFO plii);
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct LASTINPUTINFO {
+            public uint cbSize;
+            public int dwTime;
+        }
+
+        public static DateTime LastInput {
+            get {
+                DateTime bootTime = DateTime.UtcNow.AddMilliseconds(-Environment.TickCount);
+                DateTime lastInput = bootTime.AddMilliseconds(LastInputTicks);
+                return lastInput;
+            }
+        }
+
+        public static TimeSpan IdleTime {
+            get {
+                return DateTime.UtcNow.Subtract(LastInput);
+            }
+        }
+
+        public static int LastInputTicks {
+            get {
+                LASTINPUTINFO lii = new LASTINPUTINFO();
+                lii.cbSize = (uint)Marshal.SizeOf(typeof(LASTINPUTINFO));
+                GetLastInputInfo(ref lii);
+                return lii.dwTime;
+            }
+        }
+    }
+}
 '@
 
 function Is-KeyboardActiveOrExitCodeSet {
@@ -229,8 +273,8 @@ $Slow_Roll_Trigger_Time = 0.5
 $lborbb_exit_trigger_script_end_time = 5
 $Music_Auto_Overlay_Wait = 7
 $Video_Screensaver_Wait = 20
-$WindowsMenuOverlayTimeout = 3
-
+$WindowsMenuOverlayTimeout = 1
+$sessionID = [System.Diagnostics.Process]::GetCurrentProcess().SessionId
 #Target res os 1920 x 1080
 #Nominal 4x3 horizontal res is 1440
 #Remaining half-res is 240 px
@@ -296,7 +340,7 @@ foreach ($Def in $OverlayDef){
     $Def.form.Location = New-Object System.Drawing.Point($XLoc, $YLoc)
     $Def.form.FormBorderStyle = 'None'
     $Def.form.Text = Split-Path $Def.ImgFile -Leaf
-    $Def.form.AutoSizeMode = 'None'
+    $Def.form.AutoSize  = 0
 }
 $OverlayMode = 0
 $lborbbseenrunning = $false
@@ -306,6 +350,8 @@ While ($True) {
     $keychk = Is-KeyboardActiveOrExitCodeSet
 	$exitkeyspressed = 0
     $exittrig = 0
+    $SysIdleTime = [PInvoke.Win32.UserInput]::IdleTime.TotalSeconds
+    #Write-Host ("Idle for " + $SysIdleTime)
     #**************************
     if($keychk -eq 3){$exittrig = 1}
     
@@ -322,6 +368,9 @@ While ($True) {
 	$s = $keychk
     $CurrTime = $StopWatch.Elapsed.TotalSeconds
     $WaitTime = $CurrTime-$LastMovement
+    if ($WaitTime -gt $SysIdleTime){
+        $WaitTime = $SysIdleTime
+    }
     $SlowRoll = $CurrTime-$SlowTime
 	If (($s_prev -ne $s) -or ($mp_prev -ne $mp)) {
 		$s_prev = $s
@@ -408,5 +457,5 @@ While ($True) {
         exit
     }
     $WindowsMenuOverlayTimer = $WindowsMenuOverlayTimer+0.03
-	Start-Sleep -Milliseconds 30
+	Start-Sleep -Milliseconds 100
 }
