@@ -27,10 +27,11 @@ if ($handle.ToInt64()){
 }
 else{
     #start microsoft-edge:http://google.com
-    start microsoft-edge:
+    $process = start microsoft-edge:
     $wshell = New-Object -ComObject wscript.shell;
     #$wshell.AppActivate('Google - Microsoft Edge')
     $wshell.AppActivate('Microsoft Edge')
     Sleep 1
-    $wshell.SendKeys('{F11}')
+    $process.MainWindowHandle | Set-WindowStyle -Style Maximized
+    #$wshell.SendKeys('{F11}')
 }
