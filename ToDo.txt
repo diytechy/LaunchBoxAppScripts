@@ -1,9 +1,12 @@
-Map files for DOSBox since title is not reliable... =(
 
 Add mapping if needed for other windows games.
+Map files for DOSBox since title is not reliable... =(
+
+Filter mouse position change over time?  (To reduce jitter resetting timer)
+
+Filter any idle time?
 
 Add multi game startup macro for Sheep Shaver
 
-Filter mouse position change over time?  (To reduce jitter resetting timer)
 
 Make sure Vivaldi maps to locally installed version (How?)
