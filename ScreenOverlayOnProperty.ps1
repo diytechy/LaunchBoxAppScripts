@@ -62,6 +62,46 @@ namespace PInvoke.Win32 {
 }
 '@
 
+Add-Type @"
+using System;
+using System.Runtime.InteropServices;
+
+public class WindowCheck {
+    [DllImport("user32.dll")]
+    public static extern IntPtr GetForegroundWindow();
+
+    [DllImport("user32.dll")]
+    public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+
+    public struct RECT {
+        public int Left, Top, Right, Bottom;
+    }
+
+    public static bool IsFullscreen() {
+        RECT rect;
+        IntPtr hWnd = GetForegroundWindow();
+        if (GetWindowRect(hWnd, out rect)) {
+            return rect.Left == 0 && rect.Top == 0 &&
+                   rect.Right == Console.LargestWindowWidth &&
+                   rect.Bottom == Console.LargestWindowHeight;
+        }
+        return false;
+    }
+}
+"@
+
+# Check if the foreground window is fullscreen
+[WindowCheck]::IsFullscreen()
+
+#$appView = [Windows.UI.ViewManagement.ApplicationView]::GetForCurrentView()
+#$isFullScreen = $appView.IsFullScreenMode
+#
+#if ($isFullScreen) {
+#    Write-Host "The application is in full-screen mode."
+#} else {
+#    Write-Host "The application is not in full-screen mode."
+#}
+
 function Is-KeyboardActiveOrExitCodeSet {
 	$ksum = 0
     $overlaykeyspressed = 0 
@@ -120,6 +160,11 @@ function Is-WindowHoldActive {
     param ([string]$WindowString)
     return(Is-WindowActive $WindowString @($HoldWindowNames))
 }
+#Is-WindowFullscreen
+function Is-WindowFullscreen {
+    param ([string]$WindowString)
+    return(Is-WindowActive $WindowString @($HoldWindowNames))
+}
 
 $VideoPlayerNames="Youtube","Crunchyroll","Netflix","Disney"
 function Is-WindowVideoPlayer {
@@ -127,7 +172,7 @@ function Is-WindowVideoPlayer {
     return(Is-WindowActive $WindowString @($VideoPlayerNames))
 }
 
-$MusicPlayerNames="Pandora","Spotify","Amazon Music","Radio"
+$MusicPlayerNames="Pandora","Spotify","Amazon Music","Radio","projectMSDL"
 function Is-WindowMusicPlayer {
     param ([string]$WindowString)
     #Write-Host Is Music Active: ;$TstVal = Is-WindowActive $WindowString @($MusicPlayerNames); Write-Host $TstVal
@@ -397,6 +442,9 @@ While ($True) {
             {$exittrig = $true}
         }
         if(Is-WindowHoldActive($WH.MainWindowTitle)){
+            $LastMovement = $CurrTime
+        }
+        if(Is-WindowFullscreen($WH)){
             $LastMovement = $CurrTime
         }
         if(-not $exittrig){
