@@ -166,7 +166,7 @@ function Is-WindowFullscreen {
     return(Is-WindowActive $WindowString @($HoldWindowNames))
 }
 
-$VideoPlayerNames="Youtube","Crunchyroll","Netflix","Disney"
+$VideoPlayerNames="Youtube","Crunchyroll","Netflix","Disney","PBS"
 function Is-WindowVideoPlayer {
     param ([string]$WindowString)
     return(Is-WindowActive $WindowString @($VideoPlayerNames))
@@ -444,7 +444,7 @@ While ($True) {
         if(Is-WindowHoldActive($WH.MainWindowTitle)){
             $LastMovement = $CurrTime
         }
-        if(Is-WindowFullscreen($WH)){
+        if((Is-WindowFullscreen($WH)) -and ($WH.MainWindowTitle -ne "BigBox")){
             $LastMovement = $CurrTime
         }
         if(-not $exittrig){
