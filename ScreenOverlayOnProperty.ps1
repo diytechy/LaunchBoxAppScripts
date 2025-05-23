@@ -90,6 +90,54 @@ public class WindowCheck {
 }
 "@
 
+
+Add-Type -AssemblyName "System.Windows.Forms"
+$HoldURLNames=@("pstream.org")
+function Is-ProcURLSet2Hold
+{
+
+    param (
+        $processName,
+        $activeWindow
+        )
+    $processName = $process.ProcessName
+    switch ($processName) {
+        "chrome" {
+            Add-Type -AssemblyName "UIAutomationClient"
+            Add-Type -AssemblyName "UIAutomationTypes"
+            $element = [System.Windows.Automation.AutomationElement]::RootElement.FindFirst([System.Windows.Automation.TreeScope]::Children, [System.Windows.Automation.Condition]::CreatePropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, "Address and search bar"))
+            if ($element) {
+                $pattern = [System.Windows.Automation.ValuePattern]$element.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern)
+                $url = $pattern.Current.Value
+                Write-Host "URL: $url"
+            }
+        }
+        "msedge" {
+          Add-Type -AssemblyName "UIAutomationClient"
+          Add-Type -AssemblyName "UIAutomationTypes"
+          $element = [System.Windows.Automation.AutomationElement]::RootElement.FindFirst([System.Windows.Automation.TreeScope]::Children, [System.Windows.Automation.Condition]::CreatePropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, "Address and search bar"))
+            if ($element) {
+                $pattern = [System.Windows.Automation.ValuePattern]$element.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern)
+                $url = $pattern.Current.Value
+                Write-Host "URL: $url"
+            }
+        }
+        "firefox" {
+          Add-Type -AssemblyName "UIAutomationClient"
+          Add-Type -AssemblyName "UIAutomationTypes"
+          $element = [System.Windows.Automation.AutomationElement]::RootElement.FindFirst([System.Windows.Automation.TreeScope]::Children, [System.Windows.Automation.Condition]::CreatePropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, "Address and Search Bar"))
+            if ($element) {
+                $pattern = [System.Windows.Automation.ValuePattern]$element.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern)
+                $url = $pattern.Current.Value
+                Write-Host "URL: $url"
+            }
+        }
+        default {
+            Write-Host "URL retrieval is only supported for common web browsers (Chrome, Edge, Firefox)."
+        }
+}
+}
+
 # Check if the foreground window is fullscreen
 [WindowCheck]::IsFullscreen()
 
@@ -441,6 +489,12 @@ While ($True) {
             if($lborbb_timeout -gt $lborbb_exit_trigger_script_end_time)
             {$exittrig = $true}
         }
+            #Get active window (Maybe don't need to do this so often?
+        $whndl = [User32]::GetForegroundWindow()
+        $WH = $proclist | ? { $_.mainwindowhandle -eq $whndl }
+        if(Is-ProcURLSet2Hold($WH,$whndl)){
+            $LastMovement = $CurrTime
+        }
         if(Is-WindowHoldActive($WH.MainWindowTitle)){
             $LastMovement = $CurrTime
         }
@@ -448,9 +502,6 @@ While ($True) {
             $LastMovement = $CurrTime
         }
         if(-not $exittrig){
-            #Get active window (Maybe don't need to do this so often?
-            $whndl = [User32]::GetForegroundWindow()
-            $WH = $proclist | ? { $_.mainwindowhandle -eq $whndl }
             if(Is-WindowVideoPlayer($WH.MainWindowTitle)){
                 $SelApp = 100}
             elseif($WH.ProcessName -like "powershell_ise"){
