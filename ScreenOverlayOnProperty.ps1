@@ -92,20 +92,22 @@ public class WindowCheck {
 
 
 Add-Type -AssemblyName "System.Windows.Forms"
+Add-Type -AssemblyName "UIAutomationClient"
+Add-Type -AssemblyName "UIAutomationTypes"
+$autoroot = [Windows.Automation.AutomationElement]::RootElement
+$autocond1 = New-Object Windows.Automation.PropertyCondition([Windows.Automation.AutomationElement]::NameProperty, "Address and search bar")
+$autocond2 = New-Object Windows.Automation.PropertyCondition([Windows.Automation.AutomationElement]::NameProperty, "Address and Search bar")
 $HoldURLNames=@("pstream.org")
 function Is-ProcURLSet2Hold
 {
-
     param (
-        $processName,
+        $process,
         $activeWindow
         )
     $processName = $process.ProcessName
     switch ($processName) {
         "chrome" {
-            Add-Type -AssemblyName "UIAutomationClient"
-            Add-Type -AssemblyName "UIAutomationTypes"
-            $element = [System.Windows.Automation.AutomationElement]::RootElement.FindFirst([System.Windows.Automation.TreeScope]::Children, [System.Windows.Automation.Condition]::CreatePropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, "Address and search bar"))
+            $element = $automation::RootElement.FindFirst([System.Windows.Automation.TreeScope]::Children, [System.Windows.Automation.Condition]::PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, "Address and search bar"))
             if ($element) {
                 $pattern = [System.Windows.Automation.ValuePattern]$element.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern)
                 $url = $pattern.Current.Value
@@ -113,9 +115,7 @@ function Is-ProcURLSet2Hold
             }
         }
         "msedge" {
-          Add-Type -AssemblyName "UIAutomationClient"
-          Add-Type -AssemblyName "UIAutomationTypes"
-          $element = [System.Windows.Automation.AutomationElement]::RootElement.FindFirst([System.Windows.Automation.TreeScope]::Children, [System.Windows.Automation.Condition]::CreatePropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, "Address and search bar"))
+          $element = $automation::RootElement.FindFirst([System.Windows.Automation.TreeScope]::Children, [System.Windows.Automation.Condition]::PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, "Address and search bar"))
             if ($element) {
                 $pattern = [System.Windows.Automation.ValuePattern]$element.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern)
                 $url = $pattern.Current.Value
@@ -123,9 +123,7 @@ function Is-ProcURLSet2Hold
             }
         }
         "firefox" {
-          Add-Type -AssemblyName "UIAutomationClient"
-          Add-Type -AssemblyName "UIAutomationTypes"
-          $element = [System.Windows.Automation.AutomationElement]::RootElement.FindFirst([System.Windows.Automation.TreeScope]::Children, [System.Windows.Automation.Condition]::CreatePropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, "Address and Search Bar"))
+          $element = $automation::RootElement.FindFirst([System.Windows.Automation.TreeScope]::Children, [System.Windows.Automation.Condition]::PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, "Address and Search Bar"))
             if ($element) {
                 $pattern = [System.Windows.Automation.ValuePattern]$element.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern)
                 $url = $pattern.Current.Value
