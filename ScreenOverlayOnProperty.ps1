@@ -117,15 +117,22 @@ function Is-ProcURLSet2Hold
             $element = $autoroot.FindFirst([Windows.Automation.TreeScope]::Descendants, $autocond2)
         }
         default {
-            Write-Host "URL retrieval is only supported for common web browsers (Chrome, Edge, Firefox)."
+            #Write-Host "URL retrieval is only supported for common web browsers (Chrome, Edge, Firefox)."
         }
     }
         
     if ($element) {
         $pattern = [System.Windows.Automation.ValuePattern]$element.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern)
         $url = $pattern.Current.Value
-        Write-Host "URL: $url"
+        #Write-Host "URL: $url"
     }
+    foreach($SelURL in $HoldURLNames){
+        if($url -match $SelURL)
+        {
+        return(1)
+        }
+    }
+    {return(0)}
 }
 
 # Check if the foreground window is fullscreen
@@ -518,7 +525,10 @@ While ($True) {
                 $SelApp = 1
                 }
             else{
-                $SelApp = 0}
+                $SelApp = 0
+                if ($LastMovement -eq $CurrTime){
+                    Write-Host "Locked"}
+                }
             #break;
             if($SelApp -ne $PrevSelApp){
                 Write-Host $SelApp
