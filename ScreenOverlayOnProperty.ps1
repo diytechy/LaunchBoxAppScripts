@@ -105,38 +105,26 @@ function Is-ProcURLSet2Hold
         $activeWindow
         )
     $processName = $process.ProcessName
-    $element = $autoroot.FindFirst([Windows.Automation.TreeScope]::Descendants, $autocond1)
-    $pattern = [System.Windows.Automation.ValuePattern]$element.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern)
-    $url = $pattern.Current.Value
-    Write-Host "URL: $url"
+    $element = @()
     switch ($processName) {
         "chrome" {
-            $element = $automation::RootElement.FindFirst([System.Windows.Automation.TreeScope]::Children, [System.Windows.Automation.Condition]::PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, "Address and search bar"))
-            if ($element) {
-                $pattern = [System.Windows.Automation.ValuePattern]$element.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern)
-                $url = $pattern.Current.Value
-                Write-Host "URL: $url"
-            }
+            $element = $autoroot.FindFirst([Windows.Automation.TreeScope]::Descendants, $autocond1)
         }
         "msedge" {
-          $element = $automation::RootElement.FindFirst([System.Windows.Automation.TreeScope]::Children, [System.Windows.Automation.Condition]::PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, "Address and search bar"))
-            if ($element) {
-                $pattern = [System.Windows.Automation.ValuePattern]$element.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern)
-                $url = $pattern.Current.Value
-                Write-Host "URL: $url"
-            }
+            $element = $autoroot.FindFirst([Windows.Automation.TreeScope]::Descendants, $autocond1)
         }
         "firefox" {
-          $element = $automation::RootElement.FindFirst([System.Windows.Automation.TreeScope]::Children, [System.Windows.Automation.Condition]::PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, "Address and Search Bar"))
-            if ($element) {
-                $pattern = [System.Windows.Automation.ValuePattern]$element.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern)
-                $url = $pattern.Current.Value
-                Write-Host "URL: $url"
-            }
+            $element = $autoroot.FindFirst([Windows.Automation.TreeScope]::Descendants, $autocond2)
         }
         default {
             Write-Host "URL retrieval is only supported for common web browsers (Chrome, Edge, Firefox)."
         }
+    }
+        
+    if ($element) {
+        $pattern = [System.Windows.Automation.ValuePattern]$element.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern)
+        $url = $pattern.Current.Value
+        Write-Host "URL: $url"
     }
 }
 
