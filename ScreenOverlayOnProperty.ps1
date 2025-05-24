@@ -106,6 +106,7 @@ function Is-ProcURLSet2Hold
         )
     $processName = $process.ProcessName
     $element = @()
+    $URLFnd  = 0
     switch ($processName) {
         "chrome" {
             $element = $autoroot.FindFirst([Windows.Automation.TreeScope]::Descendants, $autocond1)
@@ -129,10 +130,10 @@ function Is-ProcURLSet2Hold
     foreach($SelURL in $HoldURLNames){
         if($url -match $SelURL)
         {
-        return(1)
+            $URLFnd = 1
         }
     }
-    {return(0)}
+    return $URLFnd
 }
 
 # Check if the foreground window is fullscreen
@@ -200,28 +201,28 @@ function Is-WindowActive {
     break
 }
 
-$HoldWindowNames="DosBox","LaunchBox","Arch","Disney"
+$HoldWindowNames=@("DosBox","LaunchBox","Disney")
 function Is-WindowHoldActive {
     param ([string]$WindowString)
-    return(Is-WindowActive $WindowString @($HoldWindowNames))
+    return(Is-WindowActive $WindowString $HoldWindowNames)
 }
 #Is-WindowFullscreen
 function Is-WindowFullscreen {
     param ([string]$WindowString)
-    return(Is-WindowActive $WindowString @($HoldWindowNames))
+    return(Is-WindowActive $WindowString $HoldWindowNames)
 }
 
-$VideoPlayerNames="Youtube","Crunchyroll","Netflix","Disney","PBS"
+$VideoPlayerNames=@("Youtube","Crunchyroll","Netflix","Disney","PBS")
 function Is-WindowVideoPlayer {
     param ([string]$WindowString)
-    return(Is-WindowActive $WindowString @($VideoPlayerNames))
+    return(Is-WindowActive $WindowString $VideoPlayerNames)
 }
 
-$MusicPlayerNames="Pandora","Spotify","Amazon Music","Radio","projectMSDL"
+$MusicPlayerNames=@("Pandora","Spotify","Amazon Music","Radio","projectMSDL")
 function Is-WindowMusicPlayer {
     param ([string]$WindowString)
     #Write-Host Is Music Active: ;$TstVal = Is-WindowActive $WindowString @($MusicPlayerNames); Write-Host $TstVal
-    return(Is-WindowActive $WindowString @($MusicPlayerNames))
+    return(Is-WindowActive $WindowString $MusicPlayerNames)
 }
 
 function UpdateOverlays {
