@@ -127,6 +127,10 @@ function Is-ProcURLSet2Hold
         $url = $pattern.Current.Value
         #Write-Host "URL: $url"
     }
+    else
+    {
+        $url = ""
+    }
     foreach($SelURL in $HoldURLNames){
         if($url -match $SelURL)
         {
