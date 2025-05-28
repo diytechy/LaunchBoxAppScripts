@@ -542,6 +542,7 @@ While ($True) {
                 }
                 if ($LastMovement -eq $CurrTime){
                     #Write-Host "Locked"}
+                    }
                 }
             #break;
             if($SelApp -ne $PrevSelApp){
