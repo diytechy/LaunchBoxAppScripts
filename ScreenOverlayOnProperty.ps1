@@ -496,12 +496,18 @@ While ($True) {
         $WH = $proclist | ? { $_.mainwindowhandle -eq $whndl }
         if(Is-ProcURLSet2Hold($WH,$whndl)){
             $LastMovement = $CurrTime
+            $ResetReason = 1
         }
-        if(Is-WindowHoldActive($WH.MainWindowTitle)){
+        elseif(Is-WindowHoldActive($WH.MainWindowTitle)){
             $LastMovement = $CurrTime
+            $ResetReason = 2
         }
-        if((Is-WindowFullscreen($WH)) -and ($WH.MainWindowTitle -ne "BigBox")){
+        elseif((Is-WindowFullscreen($WH)) -and ($WH.MainWindowTitle -ne "BigBox")){
             $LastMovement = $CurrTime
+            $ResetReason = 3
+        }
+        else{
+            $ResetReason = 0
         }
         if(-not $exittrig){
             if(Is-WindowVideoPlayer($WH.MainWindowTitle)){
@@ -531,8 +537,11 @@ While ($True) {
                 }
             else{
                 $SelApp = 0
+                if($ResetReason ){
+                    $SelApp = 100+$ResetReason
+                }
                 if ($LastMovement -eq $CurrTime){
-                    Write-Host "Locked"}
+                    #Write-Host "Locked"}
                 }
             #break;
             if($SelApp -ne $PrevSelApp){
