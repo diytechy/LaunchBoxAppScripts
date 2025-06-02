@@ -1,0 +1,128 @@
+# Load the UI Automation assembly
+Add-Type -AssemblyName UIAutomationClient
+
+# Create an instance of the UI Automation object
+$automation = New-Object -TypeName System.Windows.Automation.AutomationElement
+
+# Get the property ID for the Name property
+$propertyName = [System.Windows.Automation.AutomationElement]::NameProperty
+$propertyId = $propertyName.Id
+
+# Specify the desired value for the Name property
+$propertyValue = "Calculator"
+
+# Create the property condition
+$condition = [System.Windows.Automation.Automation] :: Condition.CreatePropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, $propertyValue)
+
+
+# Find the element that matches the condition
+$element = $automation::RootElement.FindFirst([System.Windows.Automation.TreeScope]::Children, $condition)
+
+
+# Check if an element was found and display its name
+if ($element -ne $null) {
+    Write-Host "Found element with name: $($element.Current.Name)"
+} else {
+    Write-Host "Element not found"
+}
+
+
+**********************************************
+function Get-ActiveWindowTitle {
+    Add-Type -AssemblyName "System.Windows.Forms"
+    $activeWindow = [System.Windows.Forms.Control]::ActiveControl
+    if ($activeWindow) {
+        $process = Get-Process | Where-Object {$_.MainWindowHandle -eq $activeWindow.Handle}
+        if ($process) {
+            $processName = $process.ProcessName
+            if ($processName -eq "chrome" -or $processName -eq "msedge" -or $processName -eq "firefox") {
+                switch ($processName) {
+                    "chrome" {
+                        $clip = Get-Clipboard
+                        Add-Type -AssemblyName System.Runtime.InteropServices
+                        $null = [System.Runtime.InteropServices.Marshal]::StringToHGlobalUni("Get Current Tab")
+                        $signature = '[DllImport("user32.dll")] public static extern IntPtr SendMessage(IntPtr hWnd, int Msg, IntPtr wParam, IntPtr lParam);'
+                        $sendMessage = Add-Type -MemberDefinition $signature -Name "NativeMethods" -Namespace User32 -PassThru
+                        $sendMessage::SendMessage($process.MainWindowHandle, 0x0464, 0, $null)
+                        Start-Sleep -Milliseconds 100
+                        $url = Get-Clipboard
+                        Set-Clipboard $clip
+                        return $url
+                    }
+                    "msedge" {
+                        $clip = Get-Clipboard
+                        Add-Type -AssemblyName System.Runtime.InteropServices
+                        $null = [System.Runtime.InteropServices.Marshal]::StringToHGlobalUni("Get Current Tab")
+                        $signature = '[DllImport("user32.dll")] public static extern IntPtr SendMessage(IntPtr hWnd, int Msg, IntPtr wParam, IntPtr lParam);'
+                        $sendMessage = Add-Type -MemberDefinition $signature -Name "NativeMethods" -Namespace User32 -PassThru
+                        $sendMessage::SendMessage($process.MainWindowHandle, 0x0464, 0, $null)
+                        Start-Sleep -Milliseconds 100
+                        $url = Get-Clipboard
+                        Set-Clipboard $clip
+                        return $url
+                    }
+                    "firefox"{
+                        $clip = Get-Clipboard
+                        Add-Type -AssemblyName System.Runtime.InteropServices
+                        $null = [System.Runtime.InteropServices.Marshal]::StringToHGlobalUni("Get Current Tab")
+                        $signature = '[DllImport("user32.dll")] public static extern IntPtr SendMessage(IntPtr hWnd, int Msg, IntPtr wParam, IntPtr lParam);'
+                        $sendMessage = Add-Type -MemberDefinition $signature -Name "NativeMethods" -Namespace User32 -PassThru
+                        $sendMessage::SendMessage($process.MainWindowHandle, 0x0464, 0, $null)
+                        Start-Sleep -Milliseconds 100
+                        $url = Get-Clipboard
+                        Set-Clipboard $clip
+                        return $url
+                    }
+                }
+            }
+        }
+    }
+    return $null
+}
+***********************************************
+Add-Type @"
+using System;
+using System.Runtime.InteropServices;
+using System.Text;
+public class WindowInfo {
+    [DllImport("user32.dll")]
+    public static extern IntPtr GetForegroundWindow();
+
+    [DllImport("user32.dll")]
+    public static extern int GetWindowText(IntPtr hWnd, StringBuilder text, int count);
+}
+"@
+
+$activeWindowHandle = [WindowInfo]::GetForegroundWindow()
+$windowTitle = New-Object System.Text.StringBuilder(256)
+[void][WindowInfo]::GetWindowText($activeWindowHandle, $windowTitle, $windowTitle.Capacity)
+$activeWindowTitle = $windowTitle.ToString()
+
+if ($activeWindowTitle -like "*Chrome*" -or $activeWindowTitle -like "*Firefox*" -or $activeWindowTitle -like "*Edge*") {
+    # Simulate pressing Ctrl+L to focus the address bar
+    [System.Windows.Forms.SendKeys]::SendWait("^{l}")
+    # Simulate pressing Ctrl+C to copy the URL
+    [System.Windows.Forms.SendKeys]::SendWait("^{c}")
+    # Get the URL from the clipboard
+    $url = Get-Clipboard
+    Write-Output "URL of the active window: $url"
+} else {
+    Write-Output "The active window is not a supported browser."
+}
+
+**********************************************
+
+[void][System.Reflection.Assembly]::LoadWithPartialName("UIAutomationClient")
+[void][System.Reflection.Assembly]::LoadWithPartialName("UIAutomationTypes")
+
+$root = [Windows.Automation.AutomationElement]::RootElement
+$condition = New-Object Windows.Automation.PropertyCondition([Windows.Automation.AutomationElement]::NameProperty, "Some Control Name")
+$element = $root.FindFirst([Windows.Automation.TreeScope]::Descendants, $condition)
+
+if ($element) {
+    Write-Host "Element found:" $element.Current.Name
+} else {
+    Write-Host "Element not found."
+}
+
+**************************************************888

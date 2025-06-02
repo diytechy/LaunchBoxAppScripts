@@ -1,4 +1,10 @@
-﻿Add-Type -AssemblyName System.Windows.Forms
+﻿$HoldURLNames     = @("pstream.org","youtube","disney","crunchyroll","hulu")
+$HoldWindowNames  = @("DosBox","LaunchBox","Disney")
+$VideoPlayerNames = @("Youtube","Crunchyroll","Netflix","Disney","PBS")
+$MusicPlayerNames = @("Pandora","Spotify","Amazon Music","Radio","projectMSDL")
+
+
+Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 Add-Type -TypeDefinition @'
 	using System;
@@ -97,7 +103,7 @@ Add-Type -AssemblyName "UIAutomationTypes"
 $autoroot = [Windows.Automation.AutomationElement]::RootElement
 $autocond1 = New-Object Windows.Automation.PropertyCondition([Windows.Automation.AutomationElement]::NameProperty, "Address and search bar")
 $autocond2 = New-Object Windows.Automation.PropertyCondition([Windows.Automation.AutomationElement]::NameProperty, "Address and Search bar")
-$HoldURLNames=@("pstream.org")
+
 function Is-ProcURLSet2Hold
 {
     param (
@@ -140,18 +146,7 @@ function Is-ProcURLSet2Hold
     return $URLFnd
 }
 
-# Check if the foreground window is fullscreen
-[WindowCheck]::IsFullscreen()
-
-#$appView = [Windows.UI.ViewManagement.ApplicationView]::GetForCurrentView()
-#$isFullScreen = $appView.IsFullScreenMode
-#
-#if ($isFullScreen) {
-#    Write-Host "The application is in full-screen mode."
-#} else {
-#    Write-Host "The application is not in full-screen mode."
-#}
-
+#https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
 function Is-KeyboardActiveOrExitCodeSet {
 	$ksum = 0
     $overlaykeyspressed = 0 
@@ -164,12 +159,14 @@ function Is-KeyboardActiveOrExitCodeSet {
                 {$exitkeyspressed = $exitkeyspressed+1}
             if($k -eq 115) #F4 val 
                 {$exitkeyspressed = $exitkeyspressed+1}
-            if($k -eq 77) #M key
-                {$overlaykeyspressed = $overlaykeyspressed+1}
-            if($k -eq 17) #Left ctrl key
-                {$overlaykeyspressed = $overlaykeyspressed+1}
-            if($k -eq 18)#Left alt key
-                {$overlaykeyspressed = $overlaykeyspressed+1}
+            #if($k -eq 77) #M key
+            #    {$overlaykeyspressed = $overlaykeyspressed+1}
+            #if($k -eq 17) #Left ctrl key
+            #    {$overlaykeyspressed = $overlaykeyspressed+1}
+            #if($k -eq 18)#Left alt key
+            #    {$overlaykeyspressed = $overlaykeyspressed+1}
+            if($k -eq 0x13)#Pause key
+                {$overlaykeyspressed = 3}
 		}
 	}
     if($exitkeyspressed -gt 1){return 3}
@@ -205,7 +202,6 @@ function Is-WindowActive {
     break
 }
 
-$HoldWindowNames=@("DosBox","LaunchBox","Disney")
 function Is-WindowHoldActive {
     param ([string]$WindowString)
     return(Is-WindowActive $WindowString $HoldWindowNames)
@@ -216,13 +212,11 @@ function Is-WindowFullscreen {
     return(Is-WindowActive $WindowString $HoldWindowNames)
 }
 
-$VideoPlayerNames=@("Youtube","Crunchyroll","Netflix","Disney","PBS")
 function Is-WindowVideoPlayer {
     param ([string]$WindowString)
     return(Is-WindowActive $WindowString $VideoPlayerNames)
 }
 
-$MusicPlayerNames=@("Pandora","Spotify","Amazon Music","Radio","projectMSDL")
 function Is-WindowMusicPlayer {
     param ([string]$WindowString)
     #Write-Host Is Music Active: ;$TstVal = Is-WindowActive $WindowString @($MusicPlayerNames); Write-Host $TstVal
