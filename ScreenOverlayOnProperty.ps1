@@ -1,7 +1,9 @@
 ﻿$HoldURLNames     = @("pstream.org","youtube","disney","crunchyroll","hulu")
 $HoldWindowNames  = @("DosBox","LaunchBox","Disney")
 $VideoPlayerNames = @("Youtube","Crunchyroll","Netflix","Disney","PBS")
-$MusicPlayerNames = @("Pandora","Spotify","Amazon Music","Radio","projectMSDL")
+$MusicPlayerNames = @("Pandora","Spotify","Amazon Music","Radio","projectMSDL")+$VideoPlayerNames
+$LBProcName = "LaunchBox"
+$BBProcName = "BigBoxInvalidProcName"#"BigBox" Invalid so this doesn't suppress the media screen saver when BigBox is open
 
 
 Add-Type -AssemblyName System.Windows.Forms
@@ -473,8 +475,8 @@ While ($True) {
         $PrevAutoExe = $CurrAutoExe
         $SlowTime = $CurrTime
         $proclist = get-process
-        $lbproc = $proclist | ? { $_.ProcessName -eq "LaunchBox" }
-        $bbproc = $proclist | ? { $_.ProcessName -eq "BigBox" }
+        $lbproc = $proclist | ? { $_.ProcessName -eq $LBProcName }
+        $bbproc = $proclist | ? { $_.ProcessName -eq $BBProcName }
         if ($lbproc.count -or $bbproc){
             $lborbbseenrunning = $true
             $lborbb_last_seen_run_time=$CurrTime
