@@ -1,6 +1,6 @@
-﻿$HoldURLNames     = @("pstream.org","youtube","disney","crunchyroll","hulu")
-$HoldWindowNames  = @("Disney")
-$VideoPlayerNames = @("Youtube","Crunchyroll","Netflix","Disney","PBS")
+﻿$VideoPlayerNames = @("Youtube","Crunchyroll","Netflix","Disney","PBS")
+$HoldURLNames     = @("pstream.org","youtube","disney","crunchyroll","hulu","pbs") + $VideoPlayerNames
+$HoldWindowNames  = @("Disney") + $VideoPlayerNames
 $MusicPlayerNames = @("Pandora","Spotify","Amazon Music","Radio","projectMSDL")+$VideoPlayerNames
 $LBProcName = "LaunchBox"
 $BBProcName = "BigBoxInvalidProcName"#"BigBox" Invalid so this doesn't suppress the media screen saver when BigBox is open
