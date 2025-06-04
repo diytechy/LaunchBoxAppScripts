@@ -1,5 +1,5 @@
 ﻿$HoldURLNames     = @("pstream.org","youtube","disney","crunchyroll","hulu")
-$HoldWindowNames  = @("DosBox","LaunchBox","Disney")
+$HoldWindowNames  = @("Disney")
 $VideoPlayerNames = @("Youtube","Crunchyroll","Netflix","Disney","PBS")
 $MusicPlayerNames = @("Pandora","Spotify","Amazon Music","Radio","projectMSDL")+$VideoPlayerNames
 $LBProcName = "LaunchBox"
@@ -149,6 +149,7 @@ function Is-ProcURLSet2Hold
 }
 
 #https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
+$pkeysum = 0
 function Is-KeyboardActiveOrExitCodeSet {
 	$ksum = 0
     $overlaykeyspressed = 0 
@@ -171,6 +172,10 @@ function Is-KeyboardActiveOrExitCodeSet {
                 {$overlaykeyspressed = 3}
 		}
 	}
+    if($ksum -ne $pkeysum){
+        #Write-Host "ksum: $($ksum.ToString())"
+        $pkeysum = $ksum
+    }
     if($exitkeyspressed -gt 1){return 3}
     if($overlaykeyspressed -gt 2){return 2}
     elseif($ksum){return 1}
