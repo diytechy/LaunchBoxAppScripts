@@ -159,7 +159,7 @@ function Is-KeyboardActiveOrExitCodeSet {
 			$ksum = $ksum + $k
             if($k -eq 27) #Esc val 
                 {$exitkeyspressed = $exitkeyspressed+1}
-            if($k -eq 115) #F4 val 
+            elseif($k -eq 115) #F4 val 
                 {$exitkeyspressed = $exitkeyspressed+1}
             #if($k -eq 77) #M key
             #    {$overlaykeyspressed = $overlaykeyspressed+1}
@@ -167,7 +167,7 @@ function Is-KeyboardActiveOrExitCodeSet {
             #    {$overlaykeyspressed = $overlaykeyspressed+1}
             #if($k -eq 18)#Left alt key
             #    {$overlaykeyspressed = $overlaykeyspressed+1}
-            if($k -eq 0x13)#Pause key
+            elseif($k -eq 19)#Pause key
                 {$overlaykeyspressed = 3}
 		}
 	}
@@ -501,6 +501,10 @@ While ($True) {
         elseif((Is-WindowFullscreen($WH)) -and ($WH.MainWindowTitle -ne "BigBox")){
             $LastMovement = $CurrTime
             $ResetReason = 3
+        }
+        elseif(-not(Get-CimInstance -Namespace root\wmi -ClassName WmiMonitorBasicDisplayParams | Select-Object  InstanceName, Active)){
+            $LastMovement = $CurrTime
+            $ResetReason = 4
         }
         else{
             $ResetReason = 0
